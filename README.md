@@ -1,6 +1,6 @@
 # VARDetect
 
-This repository is for R package ``VARDetect''. 
+This repository is for R package **VARDetect**. 
 
 
 
@@ -30,7 +30,7 @@ To cite package 'VARDetect' in publications use:
   R package version 0.1.2. https://CRAN.R-project.org/package=VARDetect
 
 A BibTeX entry for LaTeX users is
-
+```
   @Manual{,
     title = {VARDetect: Multiple Change Point Detection in Structural VAR Models},
     author = {Peiliang Bai, Yue Bai, Abolfazl Safikhani and George Michailidis},
@@ -38,3 +38,4 @@ A BibTeX entry for LaTeX users is
     note = {R package version 0.1.2},
     url = {https://CRAN.R-project.org/package=VARDetect},
   }
+ ```
