@@ -1,0 +1,575 @@
+setwd("D:/Work/Dropbox (UFL)/JSS")
+rm(list=ls())
+gc()
+
+######## Loading Packages #######################
+library("mvtnorm")
+library("lattice")
+library("igraph")
+library("pracma")
+library("Rcpp")
+library("RcppArmadillo")
+
+######## Call Functions #########################
+source("VARDetect/R/Functions_BSS_SGL.R")
+source("VARDetect/R/Functions_LpS.R")
+#cpp code for block fused lasso and block lasso
+sourceCpp("VARDetect/src/Functions_BSS_SGL.cpp")
+
+
+ptm <- proc.time()
+nobs <- (10^3); #number of time points
+p <- 15; # number of time series components
+brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+m0 <- length(brk) -1; # number of break points
+q.t <- 1; # the true AR order
+m <- m0+1 #number of segments
+try<-simu_var('sparse',nobs=nobs, k=p, lags=q.t,brk, sp_pattern="off-diagonal")
+data <- try$series
+data <- as.matrix(data)
+#run the bss method
+fit <- bss(data, method = "sparse", q = q.t)
+#detected change points:
+fit$final.selected.points
+timing <- proc.time() - ptm
+timing
+
+
+
+ptm <- proc.time()
+nobs <- (10^3); #number of time points
+p <- 15; # number of time series components
+brk <- c(floor(nobs/2),nobs+1); # true break points with nobs+1 as the last element
+m0 <- length(brk) -1; # number of break points
+q.t <- 2; # the true AR order
+m <- m0+1 #number of segments
+try<-simu_var('sparse',nobs=nobs, k=p, brk = brk, lags_vector = c(1,2), sp_pattern="diagonal")
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+
+
+signals <- c(-0.8, 0.6, 0.4)
+try<-simu_var('sparse',nobs=nobs, k=p, brk = brk, lags_vector = c(1,2), sp_pattern="off-diagonal", signals =signals)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+data <- try$series
+data <- as.matrix(data)
+MTS::MTSplot(data)
+
+#run the bss method
+fit <- bss(data, method = "sparse", q = q.t)
+#detected change points:
+fit$final.selected.points
+timing <- proc.time() - ptm
+timing
+
+MTS::MTSplot(data)
+abline(v = fit$final.selected.points, col = "red", lwd = 2)
+print(plot_matrix(do.call("cbind", fit$final.phi.hat.list), m * q.t))
+
+
+
+try<-simu_var('sparse',nobs=nobs, k=p, brk = brk, lags_vector = c(1,2), sp_pattern="random")
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+data <- try$series
+data <- as.matrix(data)
+MTS::MTSplot(data)
+########## General Settings ######################
+nobs <- (10 ^ 3 * 4); p <- 15
+brk <- c(floor(nobs / 3), floor(2 * nobs / 3), nobs + 1); 
+m0 <- length(brk) -1
+q.t <- 2
+m <- m0+1 #number of segments
+#signal for each transition matrix
+signals <- c(-0.6, -0.4, 0.6, 0.4, -0.6, -0.4)
+
+sp_density <- rep(0.05, m * q.t)
+try <- simu_var(method = "sparse", nobs = nobs, k = p, lags=q.t, 
+                brk = brk, sigma = diag(p), signals = signals,
+                sp_density = sp_density, sp_pattern = "random", seed = 1)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+# try <- simu_var(method = "sparse", nobs = nobs, k = p, sp_pattern= "diagonal", 
+#                 lags=q.t, sigma = diag(p),
+#                 brk=brk, seed = 1)
+# print(plot_matrix(do.call("cbind", try$model_param), m * q.t ))
+
+nobs <- (10^3*4); #number of time points
+p <- 15; # number of time series components
+brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+m0 <- length(brk) -1; # number of break points
+q.t <- 2; # the true AR order
+m <- m0+1 #number of segments
+#signal for each transition matrix
+signals <- c(-0.6, -0.4, 0.6, 0.4, -0.6, -0.4)
+try <- simu_var(method = "sparse", nobs = nobs, k = p, lags = q.t, 
+                brk = brk, sigma = diag(p), signals = signals,
+                sp_pattern =  "off-diagonal", seed = 1)
+# display the true transtion matrices
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+data <- try$series
+data <- as.matrix(data)
+MTS::MTSplot(data)
+#run the bss method
+
+ptm <- proc.time()
+fit <- bss(data, method = "sparse", q = q.t)
+proc.time() - ptm
+
+#display the estimated break points
+print("Estimated break points:")
+print(fit$final.selected.points)
+#display the true break points
+print("True break points:")
+print(brk[-length(brk)])
+# display the estiamted transtion matrices
+
+MTS::MTSplot(data)
+abline(v = fit$final.selected.points, col = "red", lwd = 2)
+print(plot_matrix(do.call("cbind", fit$final.phi.hat.list), m * q.t))
+
+# nobs <- (10^3); #number of time points
+# p <- 15; # number of time series components
+# brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+# m0 <- length(brk) -1; # number of break points
+# q.t <- 1; # the true AR order
+# m <- m0+1 #number of segments
+# sp_density <- rep(0.05, m*q.t) #sparsity level (5%)
+# try <- simu_var(method = 'sparse', nobs = nobs, k=p, sp_pattern= 'off-diagonal', 
+#                 lags=q.t, sigma = as.matrix(1*diag(p)),
+#                 brk=brk, seed = 1)
+# print(plot_matrix(do.call("cbind",try$model_param), m*q.t ))
+
+
+# data <- try$series
+# ptm <- proc.time()
+# temp <- tsp(data, method= "sparse")
+# proc.time() - ptm
+
+
+#####################################################
+########## Data Generation       ####################
+#####################################################
+# no group index, randomly generate group index 
+# nobs <- (10^3*4); #number of time points
+# p <- 20; # number of time series components
+# brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+# m0 <- length(brk) -1; # number of break points
+# q.t <- 2; # the true AR order
+# m <- m0+1 #number of segments
+# sp_density <- rep(0.1, m*q.t) #sparsity level 
+# 
+# try <- simu_var(method = "group sparse", nobs = nobs, k=p, lags=q.t, sigma = as.matrix(1*diag(p)),
+#                 brk=brk, sp_density = sp_density , seed = 1, group_type = "columnwise")
+# print(plot_matrix(do.call("cbind",try$model_param), m*q.t ))
+# data <- try$series
+# data <- as.matrix(data)
+
+######################################################
+######## block segmentation scheme (BSS)    ##########
+######################################################
+#run the bss method
+
+# ptm <- proc.time()
+# temp <- bss(data, method = "group sparse", q= q.t, group.case= "columnwise", group.index = as.list(c(0: (p*q.t-1))))
+# proc.time() - ptm
+# 
+# #display the estimated break points
+# print("Estimated break points:")
+# print(temp$final.selected.points)
+# #display the true break points
+# print("True break points:")
+# print(brk[-length(brk)])
+
+
+#####################################################
+########## Data Generation       ####################
+#####################################################
+###column-wise seperate across all lags
+nobs <- (10 ^ 3 * 4); #number of time points
+p <- 20; # number of time series components
+brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+m0 <- length(brk) -1; # number of break points
+q.t <- 2; # the true AR order
+m <- m0+1 #number of segments
+signals <- c(-0.8, -0.4, 0.6, -0.4, -0.8, -0.4)
+
+num_group <- 3
+group_index <- vector('list', num_group)
+group_index[[1]] <- c(1, 5)
+group_index[[2]] <- c(31)
+try <- simu_var(method = "group sparse", nobs = nobs, k = p, lags = q.t, 
+                brk = brk, sigma = diag(p), signals = signals, 
+                group_index = group_index, group_type = "columnwise")
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t ))
+data <- try$series
+data <- as.matrix(data)
+MTS::MTSplot(data)
+######################################################
+######## block segmentation scheme (BSS)    ##########
+######################################################
+# run the bss method
+ptm <- proc.time()
+fit <- bss(data, method = "group sparse", q = q.t, 
+            group.case = "columnwise", group.index = as.list(c(0: (p * q.t - 1))))
+proc.time() - ptm
+
+#display the estimated break points
+print("Estimated break points:")
+print(fit$final.selected.points)
+#display the true break points
+print("True break points:")
+print(brk[-length(brk)])
+# display the estiamted transtion matrices
+print(plot_matrix(do.call("cbind", fit$final.phi.hat.list), m * q.t ))
+
+
+MTS::MTSplot(data)
+abline(v = fit$final.selected.points, col = "red", lwd = 2)
+
+
+#####################################################
+########## Data Generation       ####################
+#####################################################
+###column-wise simultaneously across all lags
+# nobs <- (10^3*4); #number of time points
+# p <- 20; # number of time series components
+# brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+# m0 <- length(brk) -1; # number of break points
+# q.t <- 2; # the true AR order
+# m <- m0+1 #number of segments
+# signals <- c(-0.8, -0.3, 0.6, 0.3, -0.8, -0.3)
+# 
+# num_group <- 3
+# group_index <- vector('list', num_group)
+# group_index[[1]] <- c(1, 5)
+# group_index[[2]] <- c(21, 25)
+# 
+# 
+# 
+# try <- simu_var(method = "group sparse", nobs = nobs, k=p, lags=q.t, sigma = as.matrix(1*diag(p)),
+#                 brk=brk, signals = signals, group_index = group_index, group_type = "columnwise")
+# print(plot_matrix(do.call("cbind",try$model_param), m*q.t ))
+# data <- try$series
+# data <- as.matrix(data)
+# MTS::MTSplot(data)
+# ######################################################
+# ######## block segmentation scheme (BSS)    ##########
+# ######################################################
+# #run the bss method
+# 
+# ptm <- proc.time()
+# temp <- bss(data, q= q.t, method = "group sparse", group.case= "columnwise", group.index = as.list(c(0: (p*q.t-1))))
+# proc.time() - ptm
+# 
+# #display the estimated break points
+# print("Estimated break points:")
+# print(temp$final.selected.points)
+# #display the true break points
+# print("True break points:")
+# print(brk[-length(brk)])
+# # display the estiamted transtion matrices
+# print(plot_matrix(do.call("cbind", temp$final.phi.hat.list), m*q.t ))
+
+
+
+#####################################################
+########## Data Generation       ####################
+#####################################################
+# row-wise simultaneously across all lags
+nobs <- (10^3*4); #number of time points
+p <- 20; # number of time series components
+brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+m0 <- length(brk) -1; # number of break points
+q.t <- 2; # the true AR order
+m <- m0+1 #number of segments
+signals <- c(-0.8, 0.4, 0.6, -0.3, -0.8, 0.4)
+
+
+num_group <- q.t + 1
+group_index <- vector('list', num_group)
+group_index[[1]] <- c(1, 3)
+group_index[[2]] <- c(1, 3)+p
+
+
+try <- simu_var(method = 'group sparse', nobs = nobs, k=p, lags=q.t, 
+                sigma = as.matrix(0.1*diag(p)), brk=brk, signals = signals,
+                group_index = group_index, group_type = "rowwise")
+print(plot_matrix(do.call("cbind",try$model_param), m*q.t ))
+data <- try$series
+data <- as.matrix(data)
+MTS::MTSplot(data)
+
+
+
+#run the bss method
+group.index <- vector("list", p)
+for(i in 1:p){
+  group.index[[i]] <- rep(i-1, q.t) + seq(0, p*(q.t-1), p)
+}
+ptm <- proc.time()
+fit <- bss(data, method = "group sparse",  q= q.t, 
+            group.case= "rowwise", group.index = group.index)
+proc.time() - ptm
+
+#display the estimated break points
+print("Estimated break points:")
+print(fit$final.selected.points)
+#display the true break points
+print("True break points:")
+print(brk[-length(brk)])
+# display the estiamted transtion matrices
+print(plot_matrix(do.call("cbind", fit$final.phi.hat.list), m*q.t))
+
+MTS::MTSplot(data)
+abline(v = fit$final.selected.points, col = "red", lwd = 2)
+
+#####################################################
+########## Data Generation       ####################
+#####################################################
+
+# # row-wise separately across all lags
+# nobs <- (10^3*4); #number of time points
+# p <- 20; # number of time series components
+# brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+# m0 <- length(brk) -1; # number of break points
+# q.t <- 2; # the true AR order
+# m <- m0+1 #number of segments
+# signals <- c(-0.4, -0.4, 0.4, 0.4, -0.4, -0.4)
+# 
+# 
+# num_group <- q.t + 1
+# group_index <- vector('list', num_group)
+# group_index[[1]] <- c(1, 3)
+# group_index[[2]] <- c(37)
+# 
+# 
+# try <- simu_var(method = 'group sparse', nobs = nobs, k=p, lags=q.t, sigma = as.matrix(1*diag(p)),
+#                 brk=brk, signals = signals, seed = 1, 
+#                 group_index = group_index, group_type = "rowwise")
+# print(plot_matrix(do.call("cbind",try$model_param), m*q.t ))
+# data <- try$series
+# data <- as.matrix(data)
+# MTS::MTSplot(data)
+# 
+# 
+# ptm <- proc.time()
+# fit <- bss(data, method = "group sparse", q = q.t,
+#             group.case= "rowwise",  group.index = as.list(c(0:(p*q.t-1))))
+# proc.time() - ptm
+# 
+# #display the estimated break points
+# print("Estimated break points:")
+# print(fit$final.selected.points)
+# #display the true break points
+# print("True break points:")
+# print(brk[-length(brk)])
+# # display the estiamted transtion matrices
+# print(plot_matrix(do.call("cbind", fit$final.phi.hat.list), m * q.t ))
+
+
+#####################################################
+########## Data Generation       ####################
+#####################################################
+
+# Hierarchical row-wise  across all lags
+nobs <- (10^3*4); #number of time points
+p <- 10; # number of time series components
+brk <- c(floor(nobs/3),floor(2*nobs/3),nobs+1); # true break points with nobs+1 as the last element
+m0 <- length(brk) -1; # number of break points
+q.t <- 2; # the true AR order
+m <- m0+1 #number of segments
+signals <- c(-0.4, -0.4, 0.4, -0.4, -0.4, -0.4)
+
+
+
+num_group <- q.t + 1
+group_index <- vector('list', num_group)
+group_index[[1]] <- c(1, 3, 10)
+group_index[[2]] <- c(3+p)
+
+
+try <- simu_var(method = 'group sparse', nobs = nobs, k=p, lags=q.t, sigma = as.matrix(1*diag(p)),
+                brk=brk, signals =signals, seed = 1, 
+                group_index = group_index, group_type = "rowwise")
+print(plot_matrix(do.call("cbind",try$model_param), m*q.t ))
+data <- try$series
+data <- as.matrix(data)
+ts.plot(data)
+
+
+#run the bss method
+group.index <- vector("list", p*q.t)
+for(i in 1:p){
+  for(j in 1:q.t){
+    if(j == 1){
+      group.index[[(j-1)*p+i]] <- c((q.t-1)*p+i)-1
+      
+    }else{
+      group.index[[(j-1)*p+i]] <-rep(i-1, q.t) + seq(0, p*(q.t-1), p)
+    }
+  }
+}
+#run the bss method
+ptm <- proc.time()
+fit <- bss(data, method = "group sparse", q=q.t,
+            group.case= "rowwise", group.index = group.index)
+proc.time() - ptm
+
+#display the estimated break points
+print("Estimated break points:")
+print(fit$final.selected.points)
+#display the true break points
+print("True break points:")
+print(brk[-length(brk)])
+# display the estiamted transtion matrices
+print(plot_matrix(do.call("cbind", fit$final.phi.hat.list), m*q.t ))
+
+
+ts.plot(data)
+abline(v = fit$final.selected.points, col = "red", lwd = 2)
+
+
+##### partial test
+
+temp <- bss(data, method = "group sparse", lambda.1.cv = 2.65, lambda.2.cv = 0.012, 
+            group.case= "rowwise", q= q.t, group.index = as.list(c(0: (p*q.t-1))))
+
+group.index.full <- group.index
+for(ii in 1:length(group.index)){
+  tmp <- c()
+  for(idx in group.index[[ii]]){
+    tmp <- c(tmp, ( idx*p) : ( (idx+1)*p -1) )
+    #tmp <- c(tmp, ( idx*p*q) : ( (idx+1)*p*q -1) )
+    
+  }
+  group.index.full[[ii]] <- tmp
+}
+
+test <- var_break_fit_block_grouprow_cpp(data.temp, 2.65, 0.012, q, max.iteration, tol = tol, initial_phi = 0.0+matrix(0.0,p,p*q*n.new), blocks, cv.index, group.index)
+
+
+
+
+#####################################################
+########## Data Generation       ####################
+#####################################################
+# Low rank plus sparse structure
+nobs <- 300
+p <- 20
+brk <- c(floor(nobs/3), floor(2*nobs/3), nobs+1)
+m0 <- length(brk)-1
+q.t <- 1
+m <- m0+1
+signals <- c(-0.7, 0.8, -0.7)
+rank <- c(1, 3, 1)
+singular_vals <- c(1, 0.75, 0.5)
+info_ratio <- rep(0.35, 3)
+
+try <- simu_var(method = "LS", nobs = nobs, k = 20, lags = 1, brk = brk, sigma = as.matrix(diag(p)), signals = signals, 
+                rank = rank, singular_vals = singular_vals, info_ratio = info_ratio, sp_pattern = "off-diagonal", 
+                spectral_radius = 0.9)
+data <- try$series
+MTS::MTSplot(data)
+print(plot_matrix(do.call("cbind", try$model_param), m*q.t))
+
+#############################################################
+lambda1 = lambda2 = lambda3 <- c(2.5, 2.5)
+mu1 = mu2 = mu3 <- c(15, 15)
+
+fit <- lstsp(data, lambda.1 = lambda1, mu.1 = mu1, 
+             lambda.2 = lambda2, mu.2 = mu2, 
+             lambda.3 = lambda3, mu.3 = mu3, alpha_L = 0.25, 
+             step.size = 5, niter = 20, skip = 5, 
+             cv = FALSE, verbose = FALSE)
+print(fit$cp)
+MTS::MTSplot(data)
+abline(v = fit$cp, col ='red', lwd = 2)
+print(plot_matrix(do.call("cbind", fit$est_phi)))
+
+
+
+
+##########################################################################
+########### fixed low rank plus sparse model
+#### data generation
+nobs <- 300
+p <- 15
+brk <- c(floor(nobs/3), floor(2*nobs/3), nobs+1)
+m <- length(brk)
+q.t <- 1
+signals <- c(-0.7, 0.7, -0.7)
+rank <- c(2, 2, 2)
+singular_vals <- c(1, 0.75)
+info_ratio <- rep(0.35, 3)
+
+
+try <- simu_var(method = "fLS", nob = nobs, k = p, lags = 1, brk = brk, sigma = as.matrix(diag(p)), signals = signals, 
+                rank = rank, singular_vals = singular_vals, info_ratio = info_ratio, sp_pattern = "off-diagonal", 
+                spectral_radius = 0.9)
+data <- try$series
+data <- as.matrix(data)
+fit <- bss(data, method = "fLS", mu = 150)
+print(qr(fit$est.lowrank)$rank)
+
+
+
+
+######################summary and evaluation results
+true_mats <- vector('list', 2)
+true_mats[[1]] <- matrix(c(1, 0, 0.5, 0.8), 2, 2, byrow = TRUE)
+true_mats[[2]] <- matrix(c(0, 0, 0, 0.75), 2, 2, byrow = TRUE)
+est_mats <- vector('list', 5)
+for(i in 1:5){
+    est_mats[[i]] <- vector('list', 2)
+    est_mats[[i]][[1]] <- matrix(sample(c(0, 1, 2), size = 4, replace = TRUE), 2, 2, byrow = TRUE)
+    est_mats[[i]][[2]] <- matrix(sample(c(0, 1), size = 4, replace = TRUE), 2, 2, byrow = TRUE)
+}
+est_mats
+
+perf_eval <- eval_func(true_mats, est_mats)
+perf_eval
+
+
+# an example of 10 replicates result
+set.seed(1)
+nob <- 1000
+brk <- c(333, 666, nob+1)
+cp.list <- vector('list', 10)
+for(i in 1:10){
+  cp.list[[i]] <-  brk[1:2] + sample(c(-50:50),1)
+}
+# some replicate fails to detect all the change point
+cp.list[[2]] <- cp.list[[2]][1]
+cp.list[4] <- list(NULL)      # setting 4'th element to NULL.
+# some replicate overestimate the number of change point
+cp.list[[3]] <- c(cp.list[[3]], 800)
+cp.list
+res <- detection_check(cp.list, brk, nob, critval = 5)
+res
+# use a stricter critical value
+res <- detection_check(cp.list, brk, nob, critval = 10)
+res
+
+
+
+
+
+# an example of 10 replicates result
+set.seed(1)
+nob <- 1000
+brk <- c(333, 666, nob+1)
+cp.list <- vector('list', 10)
+for(i in 1:10){
+  cp.list[[i]] <-  brk[1:2] + sample(c(-50:50),1)
+}
+# some replicate fails to detect all the change point
+cp.list[[2]] <- cp.list[[2]][1]
+cp.list[4] <- list(NULL)      # setting 4'th element to NULL.
+# some replicate overestimate the number of change point
+cp.list[[3]] <- c(cp.list[[3]], 800)
+cp.list
+res <- hausdorff_check(cp.list, brk)
+res
+
+
+

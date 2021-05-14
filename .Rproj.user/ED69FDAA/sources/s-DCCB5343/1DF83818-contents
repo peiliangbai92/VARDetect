@@ -1,0 +1,32 @@
+setwd("D:/Work/Dropbox (UFL)/JSS")
+rm(list=ls())
+gc()
+
+######## Loading Packages #######################
+library("mvtnorm")
+library("lattice")
+library("igraph")
+library("pracma")
+library("dplyr")
+library("Rcpp")
+library("RcppArmadillo")
+
+######## Call Functions #########################
+source("VARDetect/R/Functions_BSS_SGL.R")
+source("VARDetect/R/Functions_LpS.R")
+#cpp code for block fused lasso and block lasso
+sourceCpp("VARDetect/src/Functions_BSS_SGL.cpp")
+
+
+# loading data
+data <- read.csv("Weekly.csv", header = TRUE)
+time.stamp <- as.POSIXlt(data[,1], format = "%m/%d/%Y")
+pre.data <- as.matrix(data[,-1] %>% 
+                          select_if(~ !any(is.na(.))))
+
+MTS::MTSplot(pre.data, caltime = time.stamp)
+# apply group sparse TBSS algorithm to detect change points
+fit <- tbss(pre.data, method = "sparse", block.size = 15, an.grid = 12)
+print(fit$final.selected.points)
+MTS::MTSplot(pre.data)
+abline(v = fit$final.selected.points, lwd = 2, col = 'red')
