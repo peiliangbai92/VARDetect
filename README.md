@@ -41,4 +41,4 @@ A BibTeX entry for LaTeX users is
  ```
 
 
-To apply the dynamical programming method introduced in [Wang et al. (2019)](https://arxiv.org/abs/1909.06359), one can find the functions in the file "VARDetect_DP.R". 
+To apply the dynamical programming method introduced in [Wang et al. (2019)](https://arxiv.org/abs/1909.06359), one can find the functions in the file ["VARDetect_DP.R"](https://github.com/peiliangbai92/VARDetect/blob/main/VARDetect_DP.R). 
