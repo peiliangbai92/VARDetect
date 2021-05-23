@@ -1,7 +1,10 @@
 #include <RcppArmadillo.h>
-#include <omp.h>
+#ifdef _OPENMP
+    #include <omp.h>
+    // [[Rcpp::plugins(openmp)]]
+#endif
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::plugins(openmp)]]
+
 
 using namespace Rcpp;
 using namespace arma;
@@ -1353,40 +1356,76 @@ List local_refine(NumericMatrix data, int q, NumericVector blocks,
     arma::mat phi_hat_1_m(phi_hat_1.begin(), k, k*q);
     arma::mat phi_hat_2_m(phi_hat_2.begin(), k, k*q);
     vec sse_full =  zeros<vec>(num_len);
-    omp_set_num_threads(4);
-    #pragma omp parallel for
+    #ifdef _OPENMP
+        omp_set_num_threads(4);
+        #pragma omp parallel for
+            for (int ll = 0; ll < num_len; ll++ ){
+                int num = nums(ll);
+                int ub1 = num - 1;
+                int len1 =  ub1 - lb1 + 1;
+                arma::mat forecast1 (k, len1, fill::zeros); 
+                for(int j = 0; j < len1; j++){
+                    int jjj = lb1 + j;
+                    forecast1(span::all, j) = pred_cpp( data_m.t(), phi_hat_1_m , q , jjj - 1, k, 1); 
+                    // Rcout <<  forecast1(span::all, j); 
+                            
+                }
+                
+                double pred_error_1 = accu( pow(  data_m( span( lb1-1 , ub1-1), span::all).t() - forecast1 , 2.0) );
+                // Rcout << pred_error_1;
+
+                int lb2 = num ;
+                int len2 = ub2 - lb2 + 1;
+
+                arma::mat forecast2 (k, len2, fill::zeros); 
+                for(int j = 0; j < len2; j++){
+                    int jjj = lb2 + j;
+                    forecast2(span::all, j) = pred_cpp( data_m.t(), phi_hat_2_m , q , jjj - 1, k, 1); 
+                    // Rcout <<  forecast2(span::all, j); 
+                            
+                }
+                
+                double pred_error_2 = accu( pow(  data_m( span( lb2-1 , ub2-1), span::all).t() - forecast2 , 2.0) );
+                // Rcout << pred_error_2;
+
+                sse_full(ll) = pred_error_1 + pred_error_2;
+
+            }
+    #else
+    // single-threaded version of code
         for (int ll = 0; ll < num_len; ll++ ){
-            int num = nums(ll);
-            int ub1 = num - 1;
-            int len1 =  ub1 - lb1 + 1;
-            arma::mat forecast1 (k, len1, fill::zeros); 
-            for(int j = 0; j < len1; j++){
-                int jjj = lb1 + j;
-                forecast1(span::all, j) = pred_cpp( data_m.t(), phi_hat_1_m , q , jjj - 1, k, 1); 
-                // Rcout <<  forecast1(span::all, j); 
-                        
+                int num = nums(ll);
+                int ub1 = num - 1;
+                int len1 =  ub1 - lb1 + 1;
+                arma::mat forecast1 (k, len1, fill::zeros); 
+                for(int j = 0; j < len1; j++){
+                    int jjj = lb1 + j;
+                    forecast1(span::all, j) = pred_cpp( data_m.t(), phi_hat_1_m , q , jjj - 1, k, 1); 
+                    // Rcout <<  forecast1(span::all, j); 
+                            
+                }
+                
+                double pred_error_1 = accu( pow(  data_m( span( lb1-1 , ub1-1), span::all).t() - forecast1 , 2.0) );
+                // Rcout << pred_error_1;
+
+                int lb2 = num ;
+                int len2 = ub2 - lb2 + 1;
+
+                arma::mat forecast2 (k, len2, fill::zeros); 
+                for(int j = 0; j < len2; j++){
+                    int jjj = lb2 + j;
+                    forecast2(span::all, j) = pred_cpp( data_m.t(), phi_hat_2_m , q , jjj - 1, k, 1); 
+                    // Rcout <<  forecast2(span::all, j); 
+                            
+                }
+                
+                double pred_error_2 = accu( pow(  data_m( span( lb2-1 , ub2-1), span::all).t() - forecast2 , 2.0) );
+                // Rcout << pred_error_2;
+
+                sse_full(ll) = pred_error_1 + pred_error_2;
+
             }
-            
-            double pred_error_1 = accu( pow(  data_m( span( lb1-1 , ub1-1), span::all).t() - forecast1 , 2.0) );
-            // Rcout << pred_error_1;
-
-            int lb2 = num ;
-            int len2 = ub2 - lb2 + 1;
-
-            arma::mat forecast2 (k, len2, fill::zeros); 
-            for(int j = 0; j < len2; j++){
-                int jjj = lb2 + j;
-                forecast2(span::all, j) = pred_cpp( data_m.t(), phi_hat_2_m , q , jjj - 1, k, 1); 
-                // Rcout <<  forecast2(span::all, j); 
-                        
-            }
-            
-            double pred_error_2 = accu( pow(  data_m( span( lb2-1 , ub2-1), span::all).t() - forecast2 , 2.0) );
-            // Rcout << pred_error_2;
-
-            sse_full(ll) = pred_error_1 + pred_error_2;
-
-        }
+    #endif
     // for (int ll = 0; ll < num_len; ll++ ){
     //     int num = nums(ll);
     //     int ub1 = num - 1;

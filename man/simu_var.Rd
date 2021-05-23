@@ -71,7 +71,8 @@ simu_var(
 \value{
 A list object, which contains the followings
 \describe{
-  \item{series_y}{matrix of timeseries data}
+  \item{series}{matrix of timeseries data}
+  \item{noises}{matrix of noise term data}
   \item{sparse_mats}{list of sparse matrix in the transition matrix}
   \item{lowrank_mats}{list of low-rank matrix in the transition matrix}
 }

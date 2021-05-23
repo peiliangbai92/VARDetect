@@ -17,7 +17,7 @@ tbss(
   tol = 10^(-2),
   block.size = NULL,
   blocks = NULL,
-  refine = TRUE,
+  refit = FALSE,
   use.BIC = TRUE,
   an.grid = NULL
 )
@@ -47,22 +47,22 @@ tbss(
 
 \item{blocks}{the blocks}
 
-\item{refine}{logical; if TRUE, use local refinement in the exhaustive search step. Default is TRUE.}
+\item{refit}{logical; if TRUE, refit the VAR model for parameter estimation. Default is FALSE.}
 
 \item{use.BIC}{use BIC for k-means part}
 
 \item{an.grid}{a vector of an for grid searching}
 }
 \value{
-A list object, which contains the followings
+S3 object of class \code{VARDetect.result}, which contains the followings
 \describe{
-  \item{first.selected.points}{a set of selected break point after the first block fused lasso step}
-  \item{second.selected.points}{a set of selected break point after the second local screening step}
-  \item{final.selected.points}{a set of selected break point after the thrid exhaustive search step}
-  \item{final.selected.points.grid}{a list of selected break point after the thrid exhaustive search step for different an values}
-  \item{an}{the selected neighborhood size a_n after the grid search}
-  \item{final.phi.hat.list}{estimated parameters for each segment}
-  \item{timing}{computation time for each step}
+  \item{data}{the original dataset}
+  \item{q}{the time lag user specified, a numeric value}
+  \item{cp}{final estimated change points, a numeric vector}
+  \item{sparse_mats}{estimated sparse components for each segment, a list of numeric matrices}
+  \item{lowrank_mats}{estimated low rank components for each segment, a list of numeric matrices}
+  \item{est_phi}{estimated final model parameters, the summation of the sparse and the low rank components}
+  \item{time}{computation time for each step}
 }
 }
 \description{
@@ -82,11 +82,13 @@ data <- try$series
 data <- as.matrix(data)
 #run the bss method
 fit <- tbss(data, method = "sparse", q = q.t)
-#detected change points:
-fit$final.selected.points
+print(fit)
+summary(fit)
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
 
 
-######Example for fixed low rank plus sparse structure VAR model
+###### Example for fixed low rank plus sparse structure VAR model
 nob <- 300
 p <- 15
 brk <- c(floor(nob/3), floor(2*nob/3), nob+1)
@@ -103,6 +105,7 @@ try <- simu_var(method = "fLS", nob = nob, k = p, lags = 1, brk = brk,
 data <- try$series
 data <- as.matrix(data)
 fit <- tbss(data, method = "fLS", mu = 150)
-print(fit$final.selected.points)
-print(qr(fit$est.lowrank)$rank)
+print(fit)
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
 }

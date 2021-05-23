@@ -25,5 +25,4 @@ est_mats <- list(matrix(rnorm(400, 0, 1), 20, 20))
 plot_granger(est_mats, threshold = 2, layout = "circle")
 plot_granger(est_mats, threshold = 2, layout = "star")
 plot_granger(est_mats, threshold = 2, layout = "nicely")
-plot_granger(est_mats, threshold = 2, layout = "random")
 }

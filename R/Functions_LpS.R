@@ -31,10 +31,13 @@ NULL
 #' @param verbose If is TRUE, then it will print all information about current step.
 #' @return A list object including 
 #' \describe{
+#'     \item{data}{the original dataset}
+#'     \item{q}{the time lag for the time series, in this case, it is 1}
 #'     \item{cp}{Final estimated change points}
 #'     \item{sparse_mats}{Final estimated sparse components}
 #'     \item{lowrank_mats}{Final estimated low rank components}
 #'     \item{est_phi}{Final estimated model parameter, equals to sum of low rank and sparse components}
+#'     \item{time}{Running time for the LSTSP algorithm}
 #' }
 #' @export
 #' @examples
@@ -59,7 +62,9 @@ NULL
 #'              lambda.3 = lambda3, mu.3 = mu3, alpha_L = 0.25, 
 #'              step.size = 5, niter = 20, skip = 5, 
 #'              cv = FALSE, verbose = FALSE)
-#' print(fit$cp)
+#' summary(fit)
+#' plot(fit, data, display = "cp")
+#' plot(fit, data, display = "param")
 #' }
 lstsp <- function(data, lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.seq = NULL, 
                   lambda.2, mu.2, lambda.3, mu.3, alpha_L = 0.25, omega = NULL, h = NULL, 
@@ -73,6 +78,7 @@ lstsp <- function(data, lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.
     }
     
     ###### Step 1: rolling-window find candidate change points ######
+    start.time <- proc.time()[3]
     candi_pts <- first.step.detect(data = data, h = h, step.size = step.size, 
                                    lambda = lambda.1, mu = mu.1, alpha_L = alpha_L, 
                                    skip = skip, lambda.1.seq = lambda.1.seq, mu.1.seq = mu.1.seq,
@@ -104,10 +110,18 @@ lstsp <- function(data, lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.
         lr_mats[[i]] <- t(fit$lr.comp)
         est_phi[[i]] <- sp_mats[[i]] + lr_mats[[i]]
     }
-    # S3 class
-    final_result <- list(cp = final.pts, sparse_mats = sp_mats, lowrank_mats = lr_mats, est_phi = est_phi)
-    class(final_result) <- append(class(final_result), "LpSDetected")
-    return(final_result)
+    end.time <- proc.time()[3]
+    time.comparison <- end.time - start.time
+    
+    # S3 class result
+    final.result <- structure(list(data = data, 
+                                   q = 1, 
+                                   cp = final.pts, 
+                                   sparse_mats = sp_mats, 
+                                   lowrank_mats = lr_mats, 
+                                   est_phi = est_phi, 
+                                   time = time.comparison), class = "VARDetect.result")
+    return(final.result)
 }
 
 
@@ -742,4 +756,141 @@ obj.func <- function(x.lr, x.sparse, A, b, lambda, mu){
         loss <- loss + f.func((x.lr[[i]] + x.sparse[[i]]), A, b) + sparse.pen(x.sparse[[i]], lambda) + nuclear.pen(x.lr[[i]], mu)
     }
     return(loss)
+}
+
+
+#' Function to deploy simulation with LSTSP algorithm
+#' @description A function to generate simulation with LSTSP algorithm
+#' @param nreps A positive integer, indicating the number of simulation replications
+#' @param simu_method the structure of time series: only available for "LS"
+#' @param nob sample size
+#' @param k dimension of transition matrix
+#' @param lags lags of VAR time series. Default is 1.
+#' @param lags_vector a vector of lags of VAR time series for each segment
+#' @param brk a vector of break points with (nob+1) as the last element
+#' @param sparse_mats transition matrix for sparse case
+#' @param group_mats transition matrix for group sparse case
+#' @param group_index group index for group lasso.
+#' @param group_type type for group lasso: "columnwise", "rowwise". Default is "columnwise".
+#' @param sp_pattern a choice of the pattern of sparse component: diagonal, 1-off diagonal, random, custom
+#' @param sp_density if we choose random pattern, we should provide the sparsity density for each segment
+#' @param rank if we choose method is low rank plus sparse, we need to provide the ranks for each segment
+#' @param info_ratio the information ratio leverages the signal strength from low rank and sparse components
+#' @param signals manually setting signal for each segment (including sign)
+#' @param singular_vals singular values for the low rank components
+#' @param spectral_radius to ensure the time series is piecewise stationary.
+#' @param sigma the variance matrix for error term
+#' @param skip an argument to control the leading data points to obtain a stationary time series
+#' @param alpha_L a positive numeric value, indicating the restricted space of low rank component, default is 0.25
+#' @param lambda.1 tuning parameter for sparse component for the first step
+#' @param mu.1 tuning parameter for low rank component for the first step
+#' @param lambda.1.seq a sequence of lambda to the left segment for cross-validation, it's not mandatory to provide
+#' @param mu.1.seq a sequence of mu to the left segment, low rank component tuning parameter
+#' @param lambda.2 tuning parameter for sparse for the second step
+#' @param mu.2 tuning parameter for low rank for the second step
+#' @param lambda.3 tuning parameter for estimating sparse components
+#' @param mu.3 tuning parameter for estimating low rank components
+#' @param omega tuning parameter for information criterion, the larger of omega, the fewer final selected change points
+#' @param h window size of the first rolling window step
+#' @param step.size rolling step
+#' @param tol tolerance for the convergence in the second screening step, indicates when to stop
+#' @param niter the number of iterations required for FISTA algorithm
+#' @param backtracking A boolean argument to indicate use backtrack to FISTA model
+#' @param rolling.skip The number of observations need to skip near the boundaries
+#' @param cv A boolean argument, indicates whether the user will apply cross validation to select tuning parameter, default is FALSE
+#' @param nfold An positive integer, the number of folds for cross validation
+#' @param verbose If is TRUE, then it will print all information about current step.
+#' @return A S3 object of class \code{VARDetect.simu.result}, containing the following entries:
+#' \describe{
+#'     \item{sizes}{A 2-d numeric vector, indicating the size of time series data}
+#'     \item{true_lag}{True time lags for the process, here is fixed to be 1.}
+#'     \item{true_lagvector}{A vector recording the time lags for different segments, not available under this model setting, 
+#'                           here is fixed to be NULL}
+#'     \item{true_cp}{True change points for simulation, a numeric vector}
+#'     \item{true_sparse}{A list of numeric matrices, indicating the true sparse components for all segments}
+#'     \item{true_lowrank}{A list of numeric matrices, indicating the true low rank components for all segments}
+#'     \item{est_cps}{A list of estimated change points, including all replications}
+#'     \item{est_lag}{A numeric value, estimated time lags, which is user specified}
+#'     \item{est_lagvector}{A vector for estimated time lags, not available for this model, set as NULL.}
+#'     \item{est_sparse_mats}{A list of estimated sparse components for all replications}
+#'     \item{est_lowrank_mats}{A list of estimated low rank components for all replications}
+#'     \item{est_phi_mats}{A list of estimated model parameters, transition matrices for VAR model}
+#'     \item{running_times}{A numeric vector, containing all running times}
+#' }
+#' @export
+#' @examples
+#' \donttest{
+#' nob <- 100
+#' p <- 15
+#' brk <- c(50, nob+1)
+#' rank <- c(1, 3)
+#' signals <- c(-0.7, 0.8)
+#' singular_vals <- c(1, 0.75, 0.5)
+#' info_ratio <- rep(0.35, 2)
+#' lambda1 = lambda2 = lambda3 <- c(2.5, 2.5)
+#' mu1 = mu2 = mu3 <- c(15, 15)
+#' try_simu <- simu_lstsp(nreps = 3, simu_method = "LS", nob = nob, k = p, 
+#'                        brk = brk, sigma = diag(p), signals = signals, 
+#'                        rank = rank, singular_vals = singular_vals, 
+#'                        info_ratio = info_ratio, sp_pattern = "off-diagonal", 
+#'                        spectral_radius = 0.9, lambda.1 = lambda1, mu.1 = mu1, 
+#'                        lambda.2 = lambda2, mu.2 = mu2, lambda.3 = lambda3, 
+#'                        mu.3 = mu3, step.size = 5, niter = 20, rolling.skip = 5,
+#'                        cv = FALSE, verbose = TRUE)
+#' summary(try_simu, critical = 5)
+#' }
+simu_lstsp <- function(nreps, simu_method = c("LS"), nob, k, lags = 1, 
+                       lags_vector = NULL, brk, sigma, skip = 50, group_mats = NULL, 
+                       group_type = c("columnwise", "rowwise")[1], group_index = NULL, 
+                       sparse_mats = NULL, sp_density = NULL, signals = NULL, rank = NULL, 
+                       info_ratio = NULL, sp_pattern = c("off-diagonal", "diagoanl", "random")[1], 
+                       singular_vals = NULL, spectral_radius = 0.9, alpha_L = 0.25, 
+                       lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.seq = NULL, 
+                       lambda.2, mu.2, lambda.3, mu.3, omega = NULL, h = NULL, 
+                       step.size = NULL, tol = 1e-4, niter = 100, backtracking = TRUE, 
+                       rolling.skip = 5, cv = FALSE, nfold = NULL, verbose = FALSE){
+    # storage variables 
+    est_cps <- vector('list', nreps)
+    est_sparse_mats <- vector('list', nreps)
+    est_lowrank_mats <- vector('list', nreps)
+    est_phi_mats <- vector('list', nreps)
+    running_times <- rep(0, nreps)
+    
+    # start fitting
+    for(rep in 1:nreps){
+        cat(paste("========================== Start replication:", rep, "==========================\n", sep = " "))
+        try <- simu_var(method = simu_method, nob = nob, k = k, lags = lags, lags_vector = lags_vector, 
+                        brk = brk, sigma = sigma, skip = skip, group_mats = group_mats, group_type = group_type, 
+                        group_index = group_index, sparse_mats = sparse_mats, sp_pattern = sp_pattern, 
+                        sp_density = sp_density, signals = signals, rank = rank, info_ratio = info_ratio, 
+                        singular_vals = singular_vals, spectral_radius = spectral_radius, seed = rep)
+        data <- as.matrix(try$series)
+        fit <- lstsp(data, lambda.1 = lambda.1, mu.1 = mu.1, lambda.1.seq = lambda.1.seq, 
+                     mu.1.seq = mu.1.seq, lambda.2 = lambda.2, mu.2 = mu.2, 
+                     lambda.3 = lambda.3, mu.3 = mu.3, alpha_L = alpha_L, omega = omega, 
+                     h = h, step.size = step.size, tol = tol, niter = niter, backtracking = backtracking, 
+                     skip = rolling.skip, cv = cv, nfold = nfold, verbose = verbose)
+        cat("========================== Finished ==========================\n")
+        est_cps[[rep]] <- fit$cp
+        est_sparse_mats[[rep]] <- fit$sparse_mats
+        est_lowrank_mats[[rep]] <- fit$lowrank_mats
+        est_phi_mats[[rep]] <- fit$est_phi
+        running_times[rep] <- fit$time
+    }
+    
+    ret <- structure(list(sizes = c(nob, k),
+                          true_lag = 1,
+                          true_lagvector = NULL, 
+                          true_cp = brk, 
+                          true_sparse = try$sparse_param, 
+                          true_lowrank = try$lowrank_param,
+                          true_phi = try$model_param, 
+                          est_cps = est_cps, 
+                          est_lag = 1,
+                          est_lagvector = NULL, 
+                          est_sparse_mats = est_sparse_mats, 
+                          est_lowrank_mats = est_lowrank_mats, 
+                          est_phi_mats = est_phi_mats, 
+                          running_times = running_times), class = "VARDetect.simu.result")
+    return(ret)
 }

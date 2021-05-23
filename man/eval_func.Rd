@@ -19,7 +19,6 @@ A list, containing the results for all measurements
     \item{specificity}{A numeric vector, including all the results for specificity over all replications}
     \item{accuracy}{A numeric vector, the results for accuracy over all replications}
     \item{mcc}{A numeric vector, the results for Matthew's correlation coefficients over all replications}
-    \item{relative_error}{A numeric vector, relative error across all simulation replications}
     \item{false_reps}{An integer vector, recording all the replications which falsely detects the change points, over-detect or under-detect}
 }
 }

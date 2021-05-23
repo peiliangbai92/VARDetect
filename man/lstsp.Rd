@@ -71,10 +71,13 @@ lstsp(
 \value{
 A list object including 
 \describe{
+    \item{data}{the original dataset}
+    \item{q}{the time lag for the time series, in this case, it is 1}
     \item{cp}{Final estimated change points}
     \item{sparse_mats}{Final estimated sparse components}
     \item{lowrank_mats}{Final estimated low rank components}
     \item{est_phi}{Final estimated model parameter, equals to sum of low rank and sparse components}
+    \item{time}{Running time for the LSTSP algorithm}
 }
 }
 \description{
@@ -102,6 +105,8 @@ fit <- lstsp(data, lambda.1 = lambda1, mu.1 = mu1,
              lambda.3 = lambda3, mu.3 = mu3, alpha_L = 0.25, 
              step.size = 5, niter = 20, skip = 5, 
              cv = FALSE, verbose = FALSE)
-print(fit$cp)
+summary(fit)
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
 }
 }

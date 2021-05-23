@@ -27,7 +27,8 @@ NULL
 #' @param seed an argument to control the random seed. Default seed is 1.
 #' @return A list object, which contains the followings
 #' \describe{
-#'   \item{series_y}{matrix of timeseries data}
+#'   \item{series}{matrix of timeseries data}
+#'   \item{noises}{matrix of noise term data}
 #'   \item{sparse_mats}{list of sparse matrix in the transition matrix}
 #'   \item{lowrank_mats}{list of low-rank matrix in the transition matrix}
 #' }
@@ -280,10 +281,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
                 for (r in 1:(k-1)){
                     sparse_mats[[1]][r, (i-1)*k+r+1] <- signals[i]
                 }
-                # sparse_mats[[1]][k, (i-1)*k+1] <- signals[i]
             }
-            
-            
             
             if(m > 1){
                 for (j in 2:m){
@@ -401,44 +399,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
             }
             phi <- cbind(phi, phi_mats[[j]])
         }      
-        
-        
-        
     }
-    
-      
-    # # examine if each segment is stationary, we force the spectral radius to be 0.9. 
-    # max_eigen <- rep(0, m)
-    # phi <- NULL
-    # for (j in 1:(m)){
-    #   if(nar == 1){
-    #       # max_eigen[j] <- max(abs(svd(sparse_mats[[j]])$d))
-    #       max_eigen[j] <- max(abs(eigen(sparse_mats[[j]])$values))
-    #       
-    #   }else{
-    #       temp_mat <- matrix(0, k*nar, k*nar)
-    #       temp_mat[1:k,] <- sparse_mats[[j]]
-    #       for(i in 1:(nar-1)){
-    #         temp_mat[((i)*k+1):( (i+1)*k), ((i-1)*k+1):( (i)*k) ] <- diag(k)
-    #       }
-    #       # print(temp_mat)
-    #       # max_eigen[j] <- max(abs(svd(temp_mat)$d))
-    #       max_eigen[j] <- max(abs(eigen(temp_mat)$values))
-    #       # print(max(abs(svd(temp_mat)$d)))
-    #       # print(max(abs(eigen(temp_mat)$values)))
-    #       
-    #   }
-    #   
-    #   print(max_eigen[j] )
-    #   # if the current segment is not stable, we rescale the spectral radius
-    #   if (max_eigen[j] >= 1){
-    #     phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
-    #     sparse_mats[[j]] <- phi_mats[[j]]
-    #   }else{
-    #     phi_mats[[j]] <- sparse_mats[[j]]
-    #   }
-    #   phi <- cbind(phi, phi_mats[[j]])
-    # }
   }
   
   
@@ -473,8 +434,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
           for(i in 1:(num_group-1) ){
               for(g in group_index[[i]] ){
                   group_mats[[j]][, g] <- signals[(j-1)*nar+floor((g-1)/k) +1] 
-              }
-            # group_mats[[j]][, group_index[[i]]] <-  signals[(j-1)*nar+1] 
+              } 
           }
           
         }
@@ -490,7 +450,6 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
                       group_mats[[j]][k, ((i-1)*k+1):(i*k)] <- signals[(j-1)*nar+floor((g-1)/k) +1] 
                   }
               }
-            # group_mats[[j]][group_index[[i]]%%k, ((i-1)*k+1):(i*k) ] <- signals[(j-1)*nar+1]
           }
           
         }
@@ -836,21 +795,23 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
 #' @param tol tolerance for the fused lasso 
 #' @param block.size the block size
 #' @param blocks the blocks
-#' @param refine logical; if TRUE, use local refinement in the exhaustive search step. Default is TRUE.
+#' @param refit logical; if TRUE, refit the VAR model for parameter estimation. Default is FALSE.
 #' @param use.BIC use BIC for k-means part
 #' @param an.grid a vector of an for grid searching
-#' @return A list object, which contains the followings
+#' @return S3 object of class \code{VARDetect.result}, which contains the followings
 #' \describe{
-#'   \item{first.selected.points}{a set of selected break point after the first block fused lasso step}
-#'   \item{second.selected.points}{a set of selected break point after the second local screening step}
-#'   \item{final.selected.points}{a set of selected break point after the thrid exhaustive search step}
-#'   \item{final.selected.points.grid}{a list of selected break point after the thrid exhaustive search step for different an values}
-#'   \item{an}{the selected neighborhood size a_n after the grid search}
-#'   \item{final.phi.hat.list}{estimated parameters for each segment}
-#'   \item{timing}{computation time for each step}
+#'   \item{data}{the original dataset}
+#'   \item{q}{the time lag user specified, a numeric value}
+#'   \item{cp}{final estimated change points, a numeric vector}
+#'   \item{sparse_mats}{estimated sparse components for each segment, a list of numeric matrices}
+#'   \item{lowrank_mats}{estimated low rank components for each segment, a list of numeric matrices}
+#'   \item{est_phi}{estimated final model parameters, the summation of the sparse and the low rank components}
+#'   \item{time}{computation time for each step}
 #' }
 #' @export
 #' @importFrom Rcpp sourceCpp
+#' @importFrom stats ar
+#' @importFrom sparsevar fitVAR
 #' @examples 
 #' #### sparse VAR model
 #' nob <- (10^3); #number of time points
@@ -864,11 +825,13 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
 #' data <- as.matrix(data)
 #' #run the bss method
 #' fit <- tbss(data, method = "sparse", q = q.t)
-#' #detected change points:
-#' fit$final.selected.points
+#' print(fit)
+#' summary(fit)
+#' plot(fit, data, display = "cp")
+#' plot(fit, data, display = "param")
 #' 
 #' 
-#' ######Example for fixed low rank plus sparse structure VAR model
+#' ###### Example for fixed low rank plus sparse structure VAR model
 #' nob <- 300
 #' p <- 15
 #' brk <- c(floor(nob/3), floor(2*nob/3), nob+1)
@@ -885,13 +848,14 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
 #' data <- try$series
 #' data <- as.matrix(data)
 #' fit <- tbss(data, method = "fLS", mu = 150)
-#' print(fit$final.selected.points)
-#' print(qr(fit$est.lowrank)$rank)
+#' print(fit)
+#' plot(fit, data, display = "cp")
+#' plot(fit, data, display = "param")
 tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1], 
                 group.case = c("columnwise", "rowwise")[1], group.index = NULL,
                 lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL, q = 1, 
                 max.iteration = 50, tol = 10^(-2), block.size = NULL, blocks = NULL,
-                refine = TRUE, use.BIC = TRUE, an.grid = NULL){
+                refit = FALSE, use.BIC = TRUE, an.grid = NULL){
   nob <- length(data[,1]); p <- length(data[1,]); 
   second.brk.points <- c(); pts.final <- c();
   
@@ -969,7 +933,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
   }else{
       # error condition
       
-      if( max(unlist(group.index)) > p*(q-1)  | max(unlist(group.index)) < 0 ){
+      if( max(unlist(group.index)) > p*q-1  | max(unlist(group.index)) < 0 ){
           stop("incorrect group index! Should among the column index or row index across all lags")
       }
       index.diff <- setdiff(seq(0, p*q-1, 1), unique(unlist(group.index)) )
@@ -1039,7 +1003,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
   #return( temp.first)
   
   if(method == "group sparse"){
-    if(length(first.brk.points)>0){
+    if(length(first.brk.points) > 0){
 
 
       #construct the grid values of neighborhood size a_n
@@ -1213,18 +1177,58 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
 
 
       }
-      return(list(first.selected.points = first.brk.points, second.selected.points = second.brk.points,
-                  final.selected.points = final.pts.res[[an.idx.final]],
-                  final.selected.points.grid = final.pts.res,
-                  an = an.sel, 
-                  final.phi.hat.list = final.phi.hat.list.res[[an.idx.final]],
-                  # final.phi.hat.list = phi.hat.list,
-                  timing = time.comparison))
+      if(refit){
+          print("refit for the parameter estimation")
+          temp <- final.phi.hat.list.res[[an.idx.final]]
+          cp.final <- final.pts.res[[an.idx.final]]
+          cp.full <- c(1, cp.final, nob+1)
+          for(i in 1:(length(cp.final) + 1) ){
+              data_y_temp <- as.matrix(data[(cp.full[i]+mean(blocks.size)): (cp.full[i+1]-1-mean(blocks.size)), ])
+              if(ncol(data_y_temp) == 1){
+                  #AR model AR(q)
+                  fit <- ar(data_y_temp, FALSE, order.max	= q)
+                  print(fit$ar)
+                  temp[[i]] <- fit$ar
+                  
+              }else{
+                  #VAR(q) model
+                  fit <- fitVAR(data_y_temp, p = q)
+                  temp[[i]] <- do.call(cbind, fit$A)
+                  
+              }
+          }
+          phi.hat.list <- temp
+          final.result <- structure(list(data = data, 
+                                         q = q,
+                                         cp = cp.final, 
+                                         sparse_mats = phi.hat.list, 
+                                         lowrank_mats = NULL, 
+                                         est_phi = phi.hat.list, 
+                                         time = time.comparison), class = "VARDetect.result")
+          return(final.result)
+      }else{
+          print("no refit for the parameter estimation")
+          final.result <- structure(list(data = data, 
+                                         q = q, 
+                                         cp = final.pts.res[[an.idx.final]], 
+                                         sparse_mats = final.phi.hat.list.res[[an.idx.final]], 
+                                         lowrank_mats = NULL, 
+                                         est_phi = final.phi.hat.list.res[[an.idx.final]], 
+                                         time = time.comparison), 
+                                    class = "VARDetect.result")
+          return(final.result)
+      }
+      
 
     }else{
-      return(list(first.selected.points = first.brk.points,
-                  final.selected.points = first.brk.points))
-
+        final.result <- structure(list(data = data, 
+                                       q = q, 
+                                       cp = first.brk.points, 
+                                       sparse_mats = NULL, 
+                                       lowrank_mats = NULL, 
+                                       est_phi = NULL, 
+                                       time = NULL), class = "VARDetect.result")
+        return(final.result)
     }
 
   }
@@ -1403,25 +1407,104 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
         
       }
       if(method == "sparse"){
-          return(list(first.selected.points = first.brk.points, second.selected.points = second.brk.points, 
-                      final.selected.points = final.pts.res[[an.idx.final]], 
-                      final.selected.points.grid = final.pts.res, 
-                      an = an.sel, 
-                      # final.phi.hat.list = phi.hat.list,
-                      final.phi.hat.list = final.phi.hat.list.res[[an.idx.final]],
-                      timing = time.comparison)) 
+          if(refit){
+              cat("refit for the parameter estimation")
+              temp <- final.phi.hat.list.res[[an.idx.final]]
+              cp.final <- final.pts.res[[an.idx.final]]
+              cp.full <- c(1, cp.final, nob+1)
+              for(i in 1:(length(cp.final) + 1) ){
+                  data_y_temp <- as.matrix(data[(cp.full[i]+mean(blocks.size)): (cp.full[i+1]-1-mean(blocks.size)), ])
+                  if(ncol(data_y_temp) == 1){
+                      #AR model AR(q)
+                      fit <- ar(data_y_temp, FALSE, order.max	= q)
+                      print(fit$ar)
+                      temp[[i]] <- fit$ar
+                      
+                  }else{
+                      #VAR(q) model
+                      fit <- fitVAR(data_y_temp, p = q)
+                      temp[[i]] <- do.call(cbind, fit$A)
+                      
+                  }
+              }
+              phi.hat.list <- temp
+              final.result <- structure(list(data = data, 
+                                             q = q, 
+                                             cp = cp.final, 
+                                             sparse_mats = phi.hat.list, 
+                                             lowrank_mats = NULL, 
+                                             est_phi = phi.hat.list, 
+                                             time = time.comparison), class = "VARDetect.result")
+              return(final.result)
+          }else{
+              cat("no refit for the parameter estimation")
+              final.result <- structure(list(data = data, 
+                                             q = q, 
+                                             cp = final.pts.res[[an.idx.final]], 
+                                             sparse_mats = final.phi.hat.list.res[[an.idx.final]], 
+                                             lowrank_mats = NULL, 
+                                             est_phi = final.phi.hat.list.res[[an.idx.final]], 
+                                             time = time.comparison), 
+                                        class = "VARDetect.result")
+              return(final.result)
+              }
       }else if(method == "fLS"){
-          return(list(first.selected.points = first.brk.points, second.selected.points = second.brk.points, 
-                      final.selected.points = final.pts.res[[an.idx.final]], 
-                      an = an.sel, 
-                      # est.sparse.list = phi.hat.list, 
-                      est.sparse.list = final.phi.hat.list.res[[an.idx.final]],
-                      est.lowrank = L_est, timing = time.comparison))
+          if(refit){
+              cat("refit for the parameter estimation")
+              temp <- final.phi.hat.list.res[[an.idx.final]]
+              cp.final <- final.pts.res[[an.idx.final]]
+              cp.full <- c(1, cp.final, nob+1)
+              for(i in 1:(length(cp.final) + 1) ){
+                  data_y_temp <- as.matrix(data_remove[(cp.full[i]+mean(blocks.size)): (cp.full[i+1]-1-mean(blocks.size)), ])
+                  if(ncol(data_y_temp) == 1){
+                      #AR model AR(q)
+                      fit <- ar(data_y_temp, FALSE, order.max = q)
+                      print(fit$ar)
+                      temp[[i]] <- fit$ar
+                      
+                  }else{
+                      #VAR(q) model
+                      fit <- fitVAR(data_y_temp, p = q)
+                      temp[[i]] <- do.call(cbind, fit$A)
+                      
+                  }
+              }
+              phi.hat.list <- temp
+              est_phi <- vector('list', length(cp.final)+1)
+              for(j in 1:length(est_phi)){
+                  est_phi[[j]] <- L_est + phi.hat.list[[j]]
+              }
+              final.result <- structure(list(cp = cp.final, 
+                                             sparse_mats = phi.hat.list, 
+                                             lowrank_mats = L_est, 
+                                             est_phi = est_phi, 
+                                             time = time.comparison), class = "VARDetect.result")
+              return(final.result)
+          }else{
+              est_phi <- vector('list', length(final.pts.res[[an.idx.final]])+1)
+              for(j in 1:length(est_phi)){
+                  est_phi[[j]] <- L_est + final.phi.hat.list.res[[an.idx.final]][[j]]
+              }
+              cat("no refit for the parameter estimation")
+              final.result <- structure(list(data = data, 
+                                             q = q, 
+                                             cp = final.pts.res[[an.idx.final]], 
+                                             sparse_mats = final.phi.hat.list.res[[an.idx.final]], 
+                                             lowrank_mats = L_est, 
+                                             est_phi = est_phi, 
+                                             time = time.comparison), class = "VARDetect.result")
+              return(final.result)
+          }
       }
     }else{
-      return(list(first.selected.points = first.brk.points,
-                  final.selected.points = first.brk.points)) 
-      
+        final.result <- structure(list(data = data, 
+                                       q = q, 
+                                       cp = first.brk.points, 
+                                       sparse_mats = NULL, 
+                                       lowrank_mats = NULL, 
+                                       est_phi = NULL, 
+                                       time = NULL), class = "VARDetect.result")
+        return(final.result)
     }
     
   }
@@ -1765,7 +1848,7 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.
     }
   }
   
-  #select the tuning parmaete that has the small cross-validation value
+  #select the tuning parameter that has the small cross-validation value
   lll <- min(which(cv == min(cv, na.rm = TRUE)));
   phi.hat.full <- phi.final[[lll]];
   #compute the estimated phi
@@ -2538,7 +2621,6 @@ prox.nuclear.func.fLS <- function(y, A, b, L, lambda, AtA, Atb){
 }
 
 
-
 #' function for detection check
 #' @param pts.final a list of estimated change points
 #' @param brk the true change points
@@ -2660,13 +2742,15 @@ detection_check <- function(pts.final, brk, nob, critval = 5){
         }
     }
     #return(list(pts.final.full.1 = pts.final.full.1, pts.final.full.2 = pts.final.full.2,  detection = detection))
-    return( detection = detection)
+    
+    df.result <- data.frame(truth = as.numeric(detection[-1,2]) / nob, 
+                            mean_rl = detection[-1,6], 
+                            std_rl = detection[-1,7], 
+                            sr = detection[-1,5])
+    colnames(df.result) <- c("Truth", "Mean", "Std", "Selection rate")
+    return(list(df_detection = df.result, full_detection = detection))
     
 }
-
-
-
-
 
 
 #' function for hausdorff distance computation
@@ -2759,15 +2843,13 @@ hausdorff_check <- function(pts.final, brk){
     }
   }
   
+  # detection <- matrix(0, 2, 6)
+  # detection[1,1] <- c("mean(hausdorff_true_est)"); detection[1,2] <- c("std(hausdorff_true_est)"); 
+  # detection[1,3] <- c("mean(hausdorff_est_true)"); detection[1,4] <- c("std(hausdorff_est_true)");
+  # detection[1,5] <- c("median(hausdorff_true_est)");
+  # detection[1,6] <- c("median(hausdorff_est_true)");
   
-  detection <- matrix(0, 2, 6)
-  
-  detection[1,1] <- c("mean(hausdorff_true_est)"); detection[1,2] <- c("std(hausdorff_true_est)"); 
-  detection[1,3] <- c("mean(hausdorff_est_true)"); detection[1,4] <- c("std(hausdorff_est_true)");
-  detection[1,5] <- c("median(hausdorff_true_est)");
-  detection[1,6] <- c("median(hausdorff_est_true)");
-  
-  distance.1 <- rep(NA, N); distance.2 <- rep(NA, N)
+  distance.1 <- rep(NA, N); distance.2 <- rep(NA, N); distance.full <- rep(NA, N)
   for(j in 1:N){
     temp.1 <- pts.final.full.1[[j]];
     if(length(temp.1) > 0){
@@ -2775,16 +2857,22 @@ hausdorff_check <- function(pts.final, brk){
     }
     temp.2 <- pts.final.full.2[[j]];
     distance.2[j] <- max(abs(pts.final.full.2[[j]] - brk[1:(m-1)] ))
+    distance.full[j] <- max(distance.1[j], distance.2[j])
   }
-  detection[2,1] <- mean(distance.1,na.rm= TRUE); detection[2,2] <- sd(distance.1,na.rm= TRUE);
-  detection[2,3] <- mean(distance.2,na.rm= TRUE); detection[2,4] <- sd(distance.2,na.rm= TRUE);
-  detection[2,5] <- median(distance.1,na.rm= TRUE); 
-  detection[2,6] <- median(distance.2,na.rm= TRUE); 
   
-  for(j in 1:4){
-    detection[2,j] <- round(as.numeric(detection[2,j]),digits = 4)
-  }
-  #return(list(pts.final.full.1 = pts.final.full.1, pts.final.full.2 = pts.final.full.2, detection = detection))
+  Mean <- mean(distance.full, na.rm = TRUE)
+  Std <- sd(distance.full, na.rm = TRUE)
+  Median <- median(distance.full, na.rm = TRUE)
+  detection <- data.frame(Mean, Std, Median)
+  # detection[2,1] <- mean(distance.1,na.rm= TRUE); detection[2,2] <- sd(distance.1,na.rm= TRUE);
+  # detection[2,3] <- mean(distance.2,na.rm= TRUE); detection[2,4] <- sd(distance.2,na.rm= TRUE);
+  # detection[2,5] <- median(distance.1,na.rm= TRUE); 
+  # detection[2,6] <- median(distance.2,na.rm= TRUE); 
+  
+  # for(j in 1:4){
+  #   detection[2,j] <- round(as.numeric(detection[2,j]),digits = 4)
+  # }
+  # return(list(pts.final.full.1 = pts.final.full.1, pts.final.full.2 = pts.final.full.2, detection = detection))
   return(distance = detection)
   
  }
@@ -2800,7 +2888,6 @@ hausdorff_check <- function(pts.final, brk){
 #'     \item{specificity}{A numeric vector, including all the results for specificity over all replications}
 #'     \item{accuracy}{A numeric vector, the results for accuracy over all replications}
 #'     \item{mcc}{A numeric vector, the results for Matthew's correlation coefficients over all replications}
-#'     \item{relative_error}{A numeric vector, relative error across all simulation replications}
 #'     \item{false_reps}{An integer vector, recording all the replications which falsely detects the change points, over-detect or under-detect}
 #' }
 #' @export
@@ -2819,7 +2906,7 @@ eval_func <- function(true_mats, est_mats){
     true_length <- length(true_mats)
     reps <- length(est_mats)
     incorrect_rep <- c()
-    SEN = SPC = ACC = MCC = RE <- c()
+    SEN = SPC = ACC = MCC <- c()
     for(rep in 1:reps){
         est_mat <- est_mats[[rep]]
         if(length(est_mat) != true_length){
@@ -2851,12 +2938,12 @@ eval_func <- function(true_mats, est_mats){
             SPC <- c(SPC, tn / (fp + tn))
             ACC <- c(ACC, (tp + tn) / (tp + tn + fp + fn))
             MCC <- c(MCC, (tp*tn - fp*fn) / sqrt((tp+fp)*(tp+fn)*(tn+fp)*(tn+fn)))
-            RE <- c(RE, norm(est_seg_mats - true_seg_mats, "F") / norm(true_seg_mats, "F"))
         }
     }
-    eval_mat <- data.frame("SEN" = c(mean(SEN), sd(SEN)), "SPC" = c(mean(SPC), sd(SPC)), 
-                           "ACC" = c(mean(ACC), sd(ACC)), "MCC" = c(mean(MCC), sd(MCC)), 
-                           "RE" = c(mean(RE), sd(RE)))
+    eval_mat <- data.frame("SEN" = c(round(mean(SEN), 4), round(sd(SEN), 4)), 
+                           "SPC" = c(round(mean(SPC), 4), round(sd(SPC), 4)), 
+                           "ACC" = c(round(mean(ACC), 4), round(sd(ACC), 4)), 
+                           "MCC" = c(round(mean(MCC), 4), round(sd(MCC), 4)))
     rownames(eval_mat) <- c("Mean", "Std")
     return(list(perf_eval = eval_mat, false_reps = incorrect_rep))
 }
@@ -2873,7 +2960,6 @@ eval_func <- function(true_mats, est_mats){
 #' @importFrom igraph graph.adjacency
 #' @importFrom igraph layout_as_star
 #' @importFrom igraph layout_nicely
-#' @importFrom igraph layout_randomly
 #' @importFrom igraph layout_in_circle
 #' @importFrom igraph V
 #' @export
@@ -2883,11 +2969,10 @@ eval_func <- function(true_mats, est_mats){
 #' plot_granger(est_mats, threshold = 2, layout = "circle")
 #' plot_granger(est_mats, threshold = 2, layout = "star")
 #' plot_granger(est_mats, threshold = 2, layout = "nicely")
-#' plot_granger(est_mats, threshold = 2, layout = "random")
 plot_granger <- function(est_mats, threshold = 0.1, layout){
-    layout_options <- c("circle", "star", "nicely", "random")
+    layout_options <- c("circle", "star", "nicely")
     if(!(layout %in% layout_options)){
-        stop("Error: Layouts are only available for circle, sphere, grid and random!!")
+        stop("Error: Layouts are only available for circle, star, and nicely!!")
     }
     seg_length <- length(est_mats)
     for(i in 1:seg_length){
@@ -2919,12 +3004,395 @@ plot_granger <- function(est_mats, threshold = 0.1, layout){
             plot.igraph(net, vertex.label = V(net)$name, layout = l, vertex.label.font = 2,
                         vertex.label.color = "black", edge.color = "gray40", edge.arrow.size = 0.1,
                         vertex.shape ="circle", vertex.color = "light blue", vertex.label.cex = 0.8)
-        }else if(layout == "random"){
-            l <- layout_randomly(net)
-            plot.igraph(net, vertex.label = V(net)$name, layout = l, vertex.label.font = 2,
-                        vertex.label.color = "black", edge.color = "gray40", edge.arrow.size = 0.1,
-                        vertex.shape ="circle", vertex.color = "light blue", vertex.label.cex = 0.8)
         }
     }
 }
 
+
+
+#' Function to plot the sparsity levels for estimated model parameters
+#' @description A function to plot lineplot for sparsity levels of estimated model parameters
+#' @param est_mats A list of numeric matrices, the length of list equals to the number of estimated segments
+#' @param threshold A numeric value, set as a threshold, the function only counts the non-zeros with absolute
+#' magnitudes larger than threshold
+#' @return A plot for sparsity density across over all estimated segments
+#' @export
+#' @examples
+#' set.seed(1)
+#' est_mats <- list(matrix(rnorm(400, 0, 2), 20, 20), matrix(rnorm(400), 20, 20))
+#' plot_density(est_mats, threshold = 0.25)
+plot_density <- function(est_mats, threshold = 0.1){
+    nmats <- length(est_mats)
+    density <- c()
+    for(i in 1:nmats){
+        mat <- est_mats[[i]]
+        d <- 0
+        for(r in 1:dim(mat)[1]){
+            for(c in 1:dim(mat)[2]){
+                if(abs(mat[r,c]) > threshold){
+                    d <- d + 1
+                }
+            }
+        }
+        density <- c(density, d / (dim(mat)[1] * dim(mat)[2]))
+    }
+    plot(density, type = 'o')
+}
+
+
+
+#' Plotting the output from VARDetect.result class
+#' @description Plotting method for S3 object of class \code{VARDetect.result}
+#' @method plot VARDetect.result
+#' @param x a \code{VARDetect.result} object
+#' @param display a character string, indicates the object the user wants to plot; possible values are
+#' \describe{
+#'     \item{\code{"cp"}}{input time series together with the estimated change points}
+#'     \item{\code{"param"}}{estimated model parameters}
+#'     \item{\code{"granger"}}{present the model parameters through Granger causal networks}
+#'     \item{\code{"density"}}{plot the sparsity levels across all segments}
+#' }
+#' @param threshold a positive numeric value, indicates the threshold to present the entries in the sparse matrices
+#' @param layout a character string, indicating the layout of the Granger network
+#' @param ... not in use
+#' @importFrom graphics abline
+#' @importFrom stats ts.plot
+#' @importFrom utils data
+#' @return A plot for change points or a series of plots for Granger causal networks for estimated model parameters
+#' @examples
+#' nob <- 1000
+#' p <- 15
+#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+#' m <- length(brk)
+#' q.t <- 1
+#' try <- simu_var('sparse', nob = nob, k = p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+#' data <- try$series
+#' data <- as.matrix(data)
+#' fit <- tbss(data, method = "sparse", q = q.t)
+#' plot(fit, display = "cp")
+#' plot(fit, display = "param")
+#' plot(fit, display = "granger", threshold = 0.2, layout = "nicely")
+#' plot(fit, display = "density", threshold = 0.2)
+#' @export
+plot.VARDetect.result <- function(x, 
+                                  display = c("cp", "param", "granger", "density")[1],
+                                  threshold = 0.1, 
+                                  layout = c("circle", "star", "nicely")[1], ...){
+    n <- dim(x$data)[1]
+    p <- dim(x$data)[2]
+    if(display == "cp"){
+        if(p >= 15){
+            MTS::MTSplot(x$data)
+            abline(v = x$cp, col = "red", lwd = 2)
+        }else{
+            ts.plot(data)
+            abline(v = x$cp, col = "red", lwd = 2)
+        }
+        
+    }
+    
+    if(display == "param"){
+        if(!is.null(x$est_phi)){
+            print(plot_matrix(do.call("cbind", x$est_phi), length(x$est_phi) * x$q))
+        }else{
+            stop("Estimated model parameter is not available!!!")
+        }
+    }
+    
+    if(display == "granger"){
+        plot_granger(x$sparse_mats, threshold = threshold, layout = layout)
+    }
+    
+    if(display == "density"){
+        plot_density(x$sparse_mats, threshold = threshold)
+    }
+}
+
+
+#' Funciton to summarize the change points estimated by VARDetect
+#' @description Summary method for objects of class \code{VARDetect.result}
+#' @method summary VARDetect.result
+#' @param object a \code{VARDetect.result} object
+#' @param ... not in use
+#' @return A series of summary, including the estimated change points, running time
+#' @examples
+#' nob <- 1000
+#' p <- 15
+#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+#' m <- length(brk)
+#' q.t <- 1
+#' try <- simu_var('sparse', nob = nob, k = p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+#' data <- try$series
+#' data <- as.matrix(data)
+#' fit <- tbss(data, method = "sparse", q = q.t)
+#' summary(fit)
+#' @export
+summary.VARDetect.result <- function(object, ...){
+    ncp <- length(object$cp)
+    if(is.null(object$est_phi)){
+        cat("No change point is finally detected! \n")
+    }else{
+        cat("============================= Summary ============================\n")
+        cat(paste("Detected", ncp, "change points, located at: \n", sep = " "))
+        cat(object$cp)
+        cat("\n")
+        cat("==================================================================\n")
+        sp_levels <- c()
+        for(j in 1:length(object$sparse_mats)){
+            mat <- object$sparse_mats[[j]]
+            d <- 0
+            for(r in 1:dim(mat)[1]){
+                for(c in 1:dim(mat)[2]){
+                    if(mat[r,c] != 0){
+                        d <- d + 1
+                    }
+                }
+            }
+            sp_levels <- c(sp_levels, d / (dim(mat)[1]*dim(mat)[2]))
+        }
+        cat("Sparsity levels for estimated sparse components are: \n")
+        cat(sp_levels)
+        cat("\n")
+        cat("==================================================================\n")
+        if(!is.null(object$lowrank_mats)){
+            ranks <- c()
+            for(j in 1:length(object$lowrank_mats)){
+                mat <- object$lowrank_mats[[j]]
+                ranks <- c(ranks, qr(mat)$rank)
+            }
+            cat("The ranks for the estimated low rank components are: \n")
+            cat(ranks)
+            cat("\n")
+            cat("==================================================================\n")
+        }else{
+            cat("There is no low rank components in the current model! \n")
+        }
+    }
+    
+    # running time summary
+    cat("==================================================================\n")
+    cat("Running time is: ")
+    cat("\n")
+    cat(paste(round(object$time[3], 3), "seconds", sep = " "))
+    cat("\n")
+    cat("==================================================================\n")
+}
+
+
+
+#' Function to print the change points estimated by VARDetect
+#' @description Print the estimated change points of class \code{VARDetect.result}
+#' @param x a \code{VARDetect.result} class object
+#' @param ... not in use
+#' @return Print the estimated change points
+#' @examples
+#' nob <- 1000
+#' p <- 15
+#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+#' m <- length(brk)
+#' q.t <- 1
+#' try <- simu_var('sparse', nob = nob, k = p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+#' data <- try$series
+#' data <- as.matrix(data)
+#' fit <- tbss(data, method = "sparse", q = q.t)
+#' print(fit)
+#' @export
+print.VARDetect.result <- function(x, ...){
+    if(!is.null(x$est_phi)){
+        cat("Estimated change points are: ")
+        cat(x$cp)
+        cat("\n")
+    }else{
+        cat("There is no change point detected! \n")
+    }
+}
+
+
+
+
+#' Simulation function for TBSS algorithm
+#' @description Function for deploying simulation using TBSS algorithm
+#' @param nreps A numeric integer number, indicates the number of simulation replications
+#' @param simu_method the structure of time series: "sparse","group sparse", and "fLS"
+#' @param nob sample size
+#' @param k dimension of transition matrix
+#' @param lags lags of VAR time series. Default is 1.
+#' @param lags_vector a vector of lags of VAR time series for each segment
+#' @param brk a vector of break points with (nob+1) as the last element
+#' @param sparse_mats transition matrix for sparse case
+#' @param group_mats transition matrix for group sparse case
+#' @param group_index group index for group lasso.
+#' @param group_type type for group lasso: "columnwise", "rowwise". Default is "columnwise".
+#' @param sp_pattern a choice of the pattern of sparse component: diagonal, 1-off diagonal, random, custom
+#' @param sp_density if we choose random pattern, we should provide the sparsity density for each segment
+#' @param rank if we choose method is low rank plus sparse, we need to provide the ranks for each segment
+#' @param info_ratio the information ratio leverages the signal strength from low rank and sparse components
+#' @param signals manually setting signal for each segment (including sign)
+#' @param singular_vals singular values for the low rank components
+#' @param spectral_radius to ensure the time series is piecewise stationary.
+#' @param sigma the variance matrix for error term
+#' @param skip an argument to control the leading data points to obtain a stationary time series
+#' @param est_method method: sparse, group sparse, and fixed low rank plus sparse. Default is sparse
+#' @param group.case group sparse pattern: column, row.
+#' @param group.index group index for group sparse case
+#' @param lambda.1.cv tuning parameter lambda_1 for fused lasso
+#' @param lambda.2.cv tuning parameter lambda_2 for fused lasso
+#' @param mu tuning parameter for low rank component, only available when method is set to "fLS"
+#' @param q the AR order
+#' @param max.iteration max number of iteration for the fused lasso
+#' @param tol tolerance for the fused lasso 
+#' @param block.size the block size
+#' @param blocks the blocks
+#' @param refit logical; if TRUE, refit the VAR model for parameter estimation. Default is FALSE.
+#' @param use.BIC use BIC for k-means part
+#' @param an.grid a vector of an for grid searching
+#' @return A S3 object of class, named \code{VARDetect.simu.result}
+#' \describe{
+#'     \item{est_cps}{A list of estimated change points, including all replications}
+#'     \item{est_sparse_mats}{A list of estimated sparse components for all replications}
+#'     \item{est_lowrank_mats}{A list of estimated low rank components for all replications}
+#'     \item{est_phi_mats}{A list of estimated model parameters, transition matrices for VAR model}
+#'     \item{running_times}{A numeric vector, containing all running times}
+#' }
+#' @export
+#' @examples
+#' \donttest{
+#' nob <- 4000; p <- 15
+#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+#' m <- length(brk); q.t <- 1
+#' sp_density <- rep(0.05, m * q.t)
+#' signals <- c(-0.6, 0.6, -0.6)
+#' try_simu <- simu_tbss(nreps = 3, simu_method = "sparse", nob = nob, 
+#'                       k = p, lags = q.t, brk = brk, sigma = diag(p), 
+#'                       signals = signals, sp_density = sp_density, 
+#'                       sp_pattern = "random", est_method = "sparse", q = q.t, 
+#'                       refit = TRUE)
+#' }
+simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS")[1], nob, k, lags = 1, 
+                      lags_vector = NULL, brk, sigma, skip = 50, group_mats = NULL, 
+                      group_type = c("columnwise", "rowwise")[1], group_index = NULL, 
+                      sparse_mats = NULL, sp_density = NULL, signals = NULL, rank = NULL, info_ratio = NULL, 
+                      sp_pattern = c("off-diagonal", "diagoanl", "random")[1], 
+                      singular_vals = NULL, spectral_radius = 0.9, est_method = c("sparse", "group sparse", "fLS")[1], 
+                      q = 1, tol = 1e-2, lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL, 
+                      group.index = NULL, group.case = c("columnwise", "rowwise")[1], max.iteration = 100, 
+                      refit = FALSE, block.size = NULL, blocks = NULL, use.BIC = TRUE, an.grid = NULL){
+    # storage variables 
+    est_cps <- vector('list', nreps)
+    est_sparse_mats <- vector('list', nreps)
+    est_lowrank_mats <- vector('list', nreps)
+    est_phi_mats <- vector('list', nreps)
+    running_times <- rep(0, nreps)
+    
+    # start fitting
+    for(rep in 1:nreps){
+        cat(paste("========================== Start replication:", rep, "==========================\n", sep = " "))
+        try <- simu_var(method = simu_method, nob = nob, k = k, lags = lags, lags_vector = lags_vector, 
+                 brk = brk, sigma = sigma, skip = skip, group_mats = group_mats, group_type = group_type, 
+                 group_index = group_index, sparse_mats = sparse_mats, sp_pattern = sp_pattern, 
+                 sp_density = sp_density, signals = signals, rank = rank, info_ratio = info_ratio, 
+                 singular_vals = singular_vals, spectral_radius = spectral_radius, seed = rep)
+        data <- as.matrix(try$series)
+        fit <- tbss(data, method = est_method, q = q, tol = tol, lambda.1.cv = lambda.1.cv, 
+                    lambda.2.cv = lambda.2.cv, mu = mu, group.index = group.index, 
+                    group.case = group.case, max.iteration = max.iteration, refit = refit, 
+                    block.size = block.size, blocks = blocks, use.BIC = use.BIC, an.grid = an.grid)
+        est_cps[[rep]] <- fit$cp
+        est_sparse_mats[[rep]] <- fit$sparse_mats
+        est_lowrank_mats[[rep]] <- fit$lowrank_mats
+        est_phi_mats[[rep]] <- fit$est_phi
+        running_times[rep] <- fit$time[3]
+        cat("========================== Finished ==========================\n")
+    }
+    
+    if(simu_method == "fLS"){
+        ret <- structure(list(sizes = c(nob, k),
+                              true_lag = lags,
+                              true_lagvector = lags_vector, 
+                              true_cp = brk, 
+                              true_sparse = try$sparse_param, 
+                              true_lowrank = try$lowrank_param,
+                              true_phi = try$model_param,
+                              est_cps = est_cps, 
+                              est_lags = q, 
+                              est_lagvector = q,
+                              est_sparse_mats = est_sparse_mats, 
+                              est_lowrank_mats = est_lowrank_mats, 
+                              est_phi_mats = est_phi_mats, 
+                              running_times = running_times), class = "VARDetect.simu.result")
+    }else{
+        ret <- structure(list(sizes = c(nob, k),
+                              true_lag = lags,
+                              true_lagvector = lags_vector, 
+                              true_cp = brk, 
+                              true_sparse = try$sparse_param, 
+                              true_lowrank = NULL,
+                              true_phi = try$model_param,
+                              est_cps = est_cps, 
+                              est_lags = q, 
+                              est_lagvector = q,
+                              est_sparse_mats = est_sparse_mats, 
+                              est_lowrank_mats = NULL, 
+                              est_phi_mats = est_phi_mats, 
+                              running_times = running_times), class = "VARDetect.simu.result")
+    }
+    return(ret)
+}
+
+
+#' A function to summarize the results for simulation
+#' @description A function to summarize the results for simulation class \code{VARDetect.simu.result}
+#' @param object A S3 object of class \code{VARDetect.simu.result}
+#' @param critical A positive integer, set as the critical value defined in selection rate, to control the range of success, default is 5
+#' @param ... not in use 
+#' @return A series of summary, including the selection rate, Hausdorff distance, and statistical measurments, running times
+#' @examples
+#' \donttest{
+#' nob <- 4000; p <- 15
+#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+#' m <- length(brk); q.t <- 1
+#' sp_density <- rep(0.05, m * q.t)
+#' signals <- c(-0.6, 0.6, -0.6)
+#' try_simu <- simu_tbss(nreps = 3, simu_method = "sparse", nob = nob, 
+#'                       k = p, lags = q.t, brk = brk, sigma = diag(p), 
+#'                       signals = signals, sp_density = sp_density, 
+#'                       sp_pattern = "random", est_method = "sparse", 
+#'                       q = q.t, refit = TRUE)
+#' summary(try_simu, critical = 5)
+#' }
+#' @export
+summary.VARDetect.simu.result <- function(object, critical = 5, ...){
+    # loading varaibles
+    reps <- length(object$est_cps)
+    n <- object$sizes[1]; p <- object$sizes[2]
+    true_lag <- object$lags
+    true_cp <- object$true_cp
+    true_sparse <- object$true_sparse; true_lowrank <- object$true_lowrank
+    true_phi <- object$true_phi
+    est_cps <- object$est_cps
+    est_sparse <- object$est_sparse_mats
+    est_lowrank <- object$est_lowrank_mats
+    est_phi <- object$est_phi_mats
+    times <- object$running_times
+    
+    # selection rate
+    cat("========================== Selection rate: ==========================\n")
+    select_rate <- detection_check(est_cps, true_cp, n, critval = critical)
+    print(select_rate$df_detection)
+    
+    # hausdorff distance
+    cat("======================== Hausdorff distance: ========================\n")
+    haus_dist <- hausdorff_check(est_cps, true_cp)
+    print(haus_dist)
+    
+    # statistical measurements
+    cat("====================== Statistical Measurment: ======================\n")
+    res <- eval_func(true_phi, est_sparse)
+    print(res$perf_eval)
+    cat("Incorrect estimation replication: ")
+    print(res$false_reps)
+    cat("======================== Computational Time: ========================\n")
+    cat(paste("Averaged running time:", round(mean(times), 4), "seconds", sep = " "))
+    cat("\n")
+    cat("=====================================================================\n")
+}
