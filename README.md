@@ -23,7 +23,6 @@ library(devtools)
 devtools::install_github("peiliangbai92/VARDetect")
 ```
 
-
 To cite package **VARDetect** in publications use:
 
   Peiliang Bai, Yue Bai, Abolfazl Safikhani and George Michailidis (2021). VARDetect: Multiple Change Point Detection in Structural VAR Models
