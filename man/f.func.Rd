@@ -19,3 +19,4 @@ Value of objective function
 \description{
 Main loss function
 }
+\keyword{internal}

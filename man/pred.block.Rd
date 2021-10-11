@@ -25,3 +25,4 @@ prediction matrix
 \description{
 Prediction function (block)
 }
+\keyword{internal}

@@ -1,7 +1,7 @@
 Package: VARDetect
 Type: Package
 Title: Multiple Change Point Detection in Structural VAR Models
-Version: 0.1.3
+Version: 0.1.5
 Author: Yue Bai [aut, cre], Peiliang Bai [aut], Abolfazl Safikhani [aut], George Michailidis [aut] 
 Authors@R: c(person("Yue", "Bai", email = "baiyue@ufl.edu", role = c("aut", "cre")),
 	person("Peiliang", "Bai", email = "baipl92@ufl.edu", role = c("aut")),
@@ -21,9 +21,8 @@ Imports:
 	mvtnorm,
 	sparsevar,
 	lattice,
-	Rcpp (>= 1.0.6)
+	Rcpp (>= 1.0.7)
 Encoding: UTF-8
 LinkingTo: Rcpp, RcppArmadillo
 Suggests: knitr, rmarkdown
-VignetteBuilder: knitr
 RoxygenNote: 7.1.1

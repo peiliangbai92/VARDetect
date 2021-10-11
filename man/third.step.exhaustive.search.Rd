@@ -47,3 +47,4 @@ A list object, which contains the followings
 \description{
 Perform the exhaustive search to select the break point for each cluster.
 }
+\keyword{internal}

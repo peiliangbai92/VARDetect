@@ -57,3 +57,4 @@ A list object, which contains the followings
 \description{
 Perform the local screening to "thin out" redundant break points.
 }
+\keyword{internal}

@@ -19,3 +19,4 @@ Value of gradients
 \description{
 Gradient function of quardratic loss
 }
+\keyword{internal}

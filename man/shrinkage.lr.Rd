@@ -17,3 +17,4 @@ A thresholded matrix, or vector
 \description{
 Shrinkage function for low-rank soft-thresholding
 }
+\keyword{internal}

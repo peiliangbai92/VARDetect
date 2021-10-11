@@ -26,3 +26,4 @@ A list object, including
 \description{
 Function to calculate loss function at the estimated change points
 }
+\keyword{internal}

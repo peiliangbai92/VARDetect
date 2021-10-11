@@ -29,3 +29,4 @@ Value of proximal function with nuclear norm penalty
 \description{
 Proximal function with nuclear norm
 }
+\keyword{internal}

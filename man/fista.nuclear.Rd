@@ -32,3 +32,4 @@ A list object, including
 \description{
 Function to estimate low-rank matrix using FISTA algorithm
 }
+\keyword{internal}

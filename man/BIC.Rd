@@ -23,3 +23,4 @@ A list object, which contains the followings
 \description{
 BIC  and HBIC function
 }
+\keyword{internal}

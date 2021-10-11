@@ -27,3 +27,4 @@ A list object, containing
 \description{
 Backward elimination algorithm
 }
+\keyword{internal}

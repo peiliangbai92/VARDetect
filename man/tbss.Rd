@@ -6,8 +6,8 @@
 \usage{
 tbss(
   data,
-  method = c("sparse", "group sparse", "fLS")[1],
-  group.case = c("columnwise", "rowwise")[1],
+  method = c("sparse", "group sparse", "fLS"),
+  group.case = c("columnwise", "rowwise"),
   group.index = NULL,
   lambda.1.cv = NULL,
   lambda.2.cv = NULL,
@@ -77,7 +77,7 @@ brk <- c(floor(nob/3),floor(2*nob/3),nob+1); # true break points with nob+1 as t
 m0 <- length(brk) -1; # number of break points
 q.t <- 1; # the true AR order
 m <- m0+1 #number of segments
-try<-simu_var('sparse',nob=nob, k=p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+try<-simu_var('sparse',nob=nob,k=p,lags=q.t,brk = brk,sp_pattern="off-diagonal",seed=1)
 data <- try$series
 data <- as.matrix(data)
 #run the bss method
@@ -99,13 +99,14 @@ rank <- c(2, 2, 2)
 singular_vals <- c(1, 0.75)
 info_ratio <- rep(0.35, 3)
 try <- simu_var(method = "fLS", nob = nob, k = p, lags = 1, brk = brk, 
-                sigma = as.matrix(diag(p)), signals = signals, 
+                sigma = as.matrix(diag(p)), signals = signals, seed=1, 
                 rank = rank, singular_vals = singular_vals, info_ratio = info_ratio, 
                 sp_pattern = "off-diagonal", spectral_radius = 0.9)
 data <- try$series
 data <- as.matrix(data)
 fit <- tbss(data, method = "fLS", mu = 150)
 print(fit)
+summary(fit)
 plot(fit, data, display = "cp")
 plot(fit, data, display = "param")
 }

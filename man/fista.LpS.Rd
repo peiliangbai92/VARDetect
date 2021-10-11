@@ -44,3 +44,4 @@ A list object, including the followings
 \description{
 A function to solve low rank plus sparse model estimation
 }
+\keyword{internal}

@@ -27,3 +27,4 @@ value of proximal function
 \description{
 Proximal function for nuclear norm penalty
 }
+\keyword{internal}

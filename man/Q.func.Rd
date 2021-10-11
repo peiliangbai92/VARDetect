@@ -27,3 +27,4 @@ Value of function Q
 \description{
 Auxiliary function for FISTA implementation
 }
+\keyword{internal}

@@ -40,3 +40,4 @@ A list object, including
 \description{
 single change point detection with cross-validation
 }
+\keyword{internal}

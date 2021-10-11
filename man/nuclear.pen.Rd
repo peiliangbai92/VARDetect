@@ -17,3 +17,4 @@ Value of nuclear norm penalty term
 \description{
 Nuclear norm penalty for low-rank component
 }
+\keyword{internal}

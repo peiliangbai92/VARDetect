@@ -17,3 +17,4 @@ A list of change points clusters
 \description{
 helper function for determining the clusters
 }
+\keyword{internal}

@@ -50,3 +50,4 @@ A vector which includes all candidate change points selected by rolling window
 \description{
 Rolling window scheme function for the first step
 }
+\keyword{internal}

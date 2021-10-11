@@ -21,3 +21,4 @@ a list object, includes
 \description{
 a function to setup training and testing datasets, select data point in test every nfold time points
 }
+\keyword{internal}

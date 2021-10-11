@@ -23,7 +23,7 @@ p <- 15
 brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
 m <- length(brk)
 q.t <- 1
-try <- simu_var('sparse', nob = nob, k = p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+try <- simu_var('sparse',nob=nob,k=p,lags=q.t,brk=brk,sp_pattern="off-diagonal",seed=1)
 data <- try$series
 data <- as.matrix(data)
 fit <- tbss(data, method = "sparse", q = q.t)

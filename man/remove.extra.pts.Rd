@@ -17,3 +17,4 @@ a vector of timepoints
 \description{
 helper function for detection check
 }
+\keyword{internal}

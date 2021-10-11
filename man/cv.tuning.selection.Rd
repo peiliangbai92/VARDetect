@@ -28,3 +28,4 @@ a list of object, including
 \description{
 a function to apply cross-validation to select tuning parameter by minimizing SSE
 }
+\keyword{internal}

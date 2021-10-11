@@ -5,7 +5,7 @@
 \title{Generate VAR(p) model data with break points}
 \usage{
 simu_var(
-  method = c("sparse", "group sparse", "fLS", "LS")[1],
+  method = c("sparse", "group sparse", "fLS", "LS"),
   nob = 300,
   k = 20,
   lags = 1,
@@ -14,13 +14,13 @@ simu_var(
   sigma = NULL,
   skip = 50,
   spectral_radius = 0.98,
-  seed = 1,
+  seed = NULL,
   sp_density = NULL,
   group_mats = NULL,
   group_index = NULL,
-  group_type = c("columnwise", "rowwise")[1],
+  group_type = c("columnwise", "rowwise"),
   sparse_mats = NULL,
-  sp_pattern = c("off-diagonal", "diagonal", "random")[1],
+  sp_pattern = c("off-diagonal", "diagonal", "random"),
   rank = NULL,
   info_ratio = NULL,
   signals = NULL,

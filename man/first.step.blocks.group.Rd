@@ -50,3 +50,4 @@ A list object, which contains the followings
 \description{
 Perform the block fused lasso to detect candidate break points.
 }
+\keyword{internal}

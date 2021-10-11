@@ -25,3 +25,4 @@ value of objective function
 \description{
 objective function, main loss function and penalties
 }
+\keyword{internal}

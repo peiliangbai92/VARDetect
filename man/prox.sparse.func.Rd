@@ -29,3 +29,4 @@ Value of proximal function with l1-norm penalty
 \description{
 Proximal function with l1-norm
 }
+\keyword{internal}

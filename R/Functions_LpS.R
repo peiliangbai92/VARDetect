@@ -143,6 +143,8 @@ lstsp <- function(data, lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.
 #'   \item{L_hat2}{Estimated low rank component for the right-handed side}
 #'   \item{sse}{The sum of squared errors for all passed time points}
 #' }
+#' @keywords internal
+#' 
 detect.LpS <- function(data, lambda, mu, alpha_L, skip = 50){
     sse <- c()
     n <- dim(data)[1]
@@ -205,6 +207,8 @@ detect.LpS <- function(data, lambda, mu, alpha_L, skip = 50){
 #'   \item{L_hat2}{Estimated low rank component for the right-handed side}
 #'   \item{sse}{The sum of squared errors for all passed time points}
 #' }
+#' @keywords internal
+#' 
 cv.detect.LpS <- function(data, lambda.1.seq = NULL, mu.1.seq = NULL, 
                           alpha_L = 0.25, skip = 50, nfold = 5){
     sse <- c()
@@ -280,12 +284,14 @@ cv.detect.LpS <- function(data, lambda.1.seq = NULL, mu.1.seq = NULL,
 #'     \item{train}{training dataset}
 #'     \item{test}{test dataset}
 #' }
+#' @keywords internal
+#' 
 cv.separate <- function(period, nfold = 5){
     n <- dim(period)[1]
     if(n < 10){
         # print("Warning: too few data points!")
         # break
-        stop("Warning: too few data points!")
+        stop("too few data points!")
     }else{
         cv.index <- c()
         for(i in 1:n){
@@ -312,6 +318,8 @@ cv.separate <- function(period, nfold = 5){
 #'     \item{lambda}{final selected tuning parameter for sparse}
 #'     \item{mu}{final selected tuning parameter for low rank}
 #' }
+#' @keywords internal
+#' 
 cv.tuning.selection <- function(data, lambda.seq, mu.seq, alpha_L = 0.25, nfold = 5){
     ### separate data time series into training and testing set
     separate <- cv.separate(data, nfold = nfold)
@@ -364,6 +372,8 @@ cv.tuning.selection <- function(data, lambda.seq, mu.seq, alpha_L = 0.25, nfold 
 #' \describe{
 #'  \item{L.n}{Value of objective function}
 #' }
+#' @keywords internal
+#' 
 break.var.lps <- function(data, pts, lambda, mu, alpha_L = 0.25){
     n <- dim(data)[1]
     k <- dim(data)[2]
@@ -403,6 +413,8 @@ break.var.lps <- function(data, pts, lambda, mu, alpha_L = 0.25){
 #'     \item{L.n}{Value of objective function}
 #'     \item{L.n.current}{Current value of objective function}
 #' }
+#' @keywords internal
+#' 
 backward.selection <- function(data, pts, lambda, mu, alpha_L = 0.25){
     n <- dim(data)[1]
     k <- dim(data)[2]
@@ -441,6 +453,8 @@ backward.selection <- function(data, pts, lambda, mu, alpha_L = 0.25){
 #' @param nfold a positive integer, indicates the number of folds of cross validation
 #' @param verbose if TRUE, then all information for current stage are printed
 #' @return A vector which includes all candidate change points selected by rolling window
+#' @keywords internal
+#' 
 first.step.detect <- function(data, h, step.size = NULL, lambda, mu, alpha_L = 0.25, 
                               skip = 3, lambda.1.seq = NULL, mu.1.seq = NULL,
                               cv = FALSE, nfold = NULL, verbose = FALSE){
@@ -508,6 +522,8 @@ first.step.detect <- function(data, h, step.size = NULL, lambda, mu, alpha_L = 0
 #'     \item{pts}{Final selected change points}
 #'     \item{ic}{Values of information criterion}
 #' }
+#' @keywords internal
+#' 
 second.step.detect <- function(data, pts, omega, lambda, mu, alpha_L = 0.25, verbose = FALSE){
     m <- length(pts)
     if(m == 0){
@@ -552,6 +568,7 @@ second.step.detect <- function(data, pts, omega, lambda, mu, alpha_L = 0.25, ver
 #'   \item{obj.val}{Values of objective function}
 #'   \item{rel.err}{Relative errors compared with the true model parameters if available}
 #' }
+#' @keywords internal
 #'
 fista.LpS <- function(A, b, lambda, mu, alpha_L = 0.25, 
                       niter = 100, backtracking = TRUE, x.true){
@@ -621,6 +638,8 @@ fista.LpS <- function(A, b, lambda, mu, alpha_L = 0.25,
 #' @param y A matrix, or a vector for thresholding
 #' @param tau A positive number, threshold
 #' @return A thresholded matrix, or vector
+#' @keywords internal
+#' 
 shrinkage <- function(y, tau){
     z <- matrix(0, nrow = nrow(y), ncol = ncol(y))
     for(i in 1:nrow(y)){
@@ -636,6 +655,8 @@ shrinkage <- function(y, tau){
 #' @param y A matrix, or a vector for thresholding
 #' @param tau A positive number, threshold
 #' @return A thresholded matrix, or vector
+#' @keywords internal
+#' 
 shrinkage.lr <- function(y, tau){
     z <- rep(0, length(y))
     for(i in 1:length(y)){
@@ -651,6 +672,8 @@ shrinkage.lr <- function(y, tau){
 #' @param AtA A p by p Gram matrix for corresponding design matrix A
 #' @param Atb An inner product for design matrix A and corresponding matrix (vector) b
 #' @return Value of gradients
+#' @keywords internal
+#' 
 gradf.func <- function(x, AtA, Atb){
     return(AtA %*% x - Atb)
 }
@@ -661,6 +684,8 @@ gradf.func <- function(x, AtA, Atb){
 #' @param x Model parameter
 #' @param lambda Tuning parameter
 #' @return Value of nuclear norm penalty term
+#' @keywords internal
+#' 
 nuclear.pen <- function(x, lambda){
     d <- svd(x)$d
     return(lambda * sum(d))
@@ -672,6 +697,8 @@ nuclear.pen <- function(x, lambda){
 #' @param x Model parameter
 #' @param lambda Tuning parameter
 #' @return Value of l1-norm penalty term
+#' @keywords internal
+#' 
 sparse.pen <- function(x, lambda){
     return(lambda*sum(x))
 }
@@ -683,6 +710,8 @@ sparse.pen <- function(x, lambda){
 #' @param A Design matrix with size of n by p
 #' @param b Correspond vector or matrix
 #' @return Value of objective function
+#' @keywords internal
+#' 
 f.func <- function(x, A, b){
     return(0.5 * norm(A %*% x - b, "F")^2)
 }
@@ -698,6 +727,8 @@ f.func <- function(x, A, b){
 #' @param AtA Gram matrix for design matrix A
 #' @param Atb Inner product for design matrix A and correspond vector b
 #' @return Value of function Q
+#' @keywords internal
+#' 
 Q.func <- function(x, y, A, b, L, AtA, Atb){
     return(f.func(y, A, b) + sum((x - y) * gradf.func(y, AtA, Atb)) + 0.5 * L * norm(x - y, "F")^2)
 }
@@ -714,6 +745,8 @@ Q.func <- function(x, y, A, b, L, AtA, Atb){
 #' @param AtA Gram matrix of design matrix A
 #' @param Atb inner product of design matrix A and correspond vector b
 #' @return Value of proximal function with nuclear norm penalty
+#' @keywords internal
+#' 
 prox.nuclear.func <- function(w1, y, A, b, L, lambda, AtA, Atb){
     Y <- w1 - (1 / L) * gradf.func(y, AtA, Atb)
     d <- shrinkage.lr(svd(Y)$d, 2*lambda / L)
@@ -732,6 +765,8 @@ prox.nuclear.func <- function(w1, y, A, b, L, lambda, AtA, Atb){
 #' @param AtA Gram matrix of design matrix A
 #' @param Atb inner product of design matrix A and correspond vector b
 #' @return Value of proximal function with l1-norm penalty
+#' @keywords internal
+#' 
 prox.sparse.func <- function(w1, y, A, b, L, lambda, AtA, Atb){
     Y <- w1 - (1 / L) * gradf.func(y, AtA, Atb)
     return(shrinkage(Y, 2*lambda / L))
@@ -748,6 +783,8 @@ prox.sparse.func <- function(w1, y, A, b, L, lambda, AtA, Atb){
 #' @param lambda a tuning parameter for sparse component
 #' @param mu a tuning parameter for low-rank component
 #' @return value of objective function
+#' @keywords internal
+#' 
 obj.func <- function(x.lr, x.sparse, A, b, lambda, mu){
     ### x.sparse is a list
     m <- length(x.sparse)
@@ -841,14 +878,17 @@ obj.func <- function(x.lr, x.sparse, A, b, lambda, mu){
 #' }
 simu_lstsp <- function(nreps, simu_method = c("LS"), nob, k, lags = 1, 
                        lags_vector = NULL, brk, sigma, skip = 50, group_mats = NULL, 
-                       group_type = c("columnwise", "rowwise")[1], group_index = NULL, 
+                       group_type = c("columnwise", "rowwise"), group_index = NULL, 
                        sparse_mats = NULL, sp_density = NULL, signals = NULL, rank = NULL, 
-                       info_ratio = NULL, sp_pattern = c("off-diagonal", "diagoanl", "random")[1], 
+                       info_ratio = NULL, sp_pattern = c("off-diagonal", "diagoanl", "random"), 
                        singular_vals = NULL, spectral_radius = 0.9, alpha_L = 0.25, 
                        lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.seq = NULL, 
                        lambda.2, mu.2, lambda.3, mu.3, omega = NULL, h = NULL, 
                        step.size = NULL, tol = 1e-4, niter = 100, backtracking = TRUE, 
                        rolling.skip = 5, cv = FALSE, nfold = NULL, verbose = FALSE){
+    
+    group_type <- match.arg(group_type)
+    sp_pattern <- match.arg(sp_pattern)
     # storage variables 
     est_cps <- vector('list', nreps)
     est_sparse_mats <- vector('list', nreps)

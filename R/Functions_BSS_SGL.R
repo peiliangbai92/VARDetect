@@ -48,13 +48,17 @@ NULL
 #' try<-simu_var("sparse",nob=nob,k=p,lags=q.t,brk =brk,sp_pattern="random",sp_density=sp_density)
 #' print(plot_matrix(do.call("cbind",try$model_param), m*q.t ))
 #' 
-simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, k=20, 
-                   lags=1, lags_vector = NULL, brk, sigma=NULL, skip=50, spectral_radius=0.98, seed = 1, sp_density=NULL,
-                   group_mats = NULL, group_index = NULL, group_type = c("columnwise", "rowwise")[1], 
-                   sparse_mats = NULL, sp_pattern = c("off-diagonal", "diagonal", "random")[1],  
+simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS"), nob=300, k=20, 
+                   lags=1, lags_vector = NULL, brk, sigma=NULL, skip=50, spectral_radius=0.98, seed = NULL, sp_density=NULL,
+                   group_mats = NULL, group_index = NULL, group_type = c("columnwise", "rowwise"), 
+                   sparse_mats = NULL, sp_pattern = c("off-diagonal", "diagonal", "random"),  
                    rank=NULL, info_ratio=NULL, signals=NULL, singular_vals = NULL 
                    ){
-  set.seed(seed) 
+  #set.seed(seed) 
+  method <- match.arg(method)
+  group_type <- match.arg(group_type)
+  sp_pattern <- match.arg(sp_pattern)
+  if(!is.null(seed)){set.seed(seed)} 
   if(length(lags) == 1){
     arlags=seq(1, lags, 1)  
     
@@ -79,7 +83,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
   
   if(!is.null(lags_vector)){
       if(length(lags_vector) != m){
-          stop("Error: the length of lags_vecotr should be m.")
+          stop("the length of lags_vecotr should be m.")
       }
       arlags_vector <- vector('list', m)
       for(i in 1:m){
@@ -89,10 +93,10 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
   }
   
   if (!(method %in% c("sparse", "group sparse", "fLS", "LS"))){
-    stop("Error: the method should be sparse or lowrank plus sparse or grouped.")
+    stop("the method should be sparse or lowrank plus sparse or grouped.")
   }
   if (spectral_radius > 1){
-    stop("Error: the spectral radius should be less than 1!")
+    stop("the spectral radius should be less than 1!")
   }
   if(is.null(sigma)){
     sigma <- as.matrix(1*diag(k))
@@ -132,7 +136,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
   if (method == 'sparse'){
     
     if (!(sp_pattern %in% c("diagonal", "off-diagonal", "random", "custom"))){
-      stop("Error: the sparsity pattern should be determined correctly!")
+      stop("the sparsity pattern should be determined correctly!")
     }
     
     if(is.null(sparse_mats)){
@@ -165,7 +169,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
         
         if (sp_pattern == 'random'){
             if (length(sp_density) != nar*m){
-                stop("Error: the length of sparsity density doesn't match! should equal number of segment*number of lags.")
+                stop("the length of sparsity density doesn't match! should equal number of segment*number of lags.")
             }
             for (j in 1:m){
                 sparse_mats[[j]] <- matrix(0, k, k*nar)
@@ -178,11 +182,11 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
         }
         if(sp_pattern == 'custom'){
             if(length(sparse_mats) != m){
-                stop("Error: the length of transition matrix doesn't match!")
+                stop("the length of transition matrix doesn't match!")
                 
             }
             if( (nrow(sparse_mats[[1]]) != k) | (ncol(sparse_mats[[1]]) != k*nar)   ){
-                stop("Error: the length of transition matrix doesn't match!")
+                stop("the length of transition matrix doesn't match!")
             }
         }
         
@@ -205,7 +209,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
                 
             }
             
-            print(max_eigen[j] )
+            #print(max_eigen[j] )
             # if the current segment is not stable, we rescale the spectral radius
             if (max_eigen[j] >= 1){
                 phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
@@ -230,7 +234,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
                     
                 }
                 
-                print(max_eigen[j] )
+                #print(max_eigen[j] )
                 # if the current segment is not stable, we rescale the spectral radius
                 if (max_eigen[j] >= 1){
                     phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
@@ -305,7 +309,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
         
         if (sp_pattern == 'random'){
             if (length(sp_density) != sum(lags_vector)){
-                stop("Error: the length of sparsity density doesn't match! should equal number of segment*number of lags.")
+                stop("the length of sparsity density doesn't match! should equal number of segment*number of lags.")
             }
             
             nar_max <- max(lags_vector)
@@ -334,17 +338,17 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
         }
         if(sp_pattern == 'custom'){
             if(length(sparse_mats) != m){
-                stop("Error: the length of transition matrix doesn't match!")
+                stop("the length of transition matrix doesn't match!")
                 
             }
             if( (nrow(sparse_mats[[1]]) != k) | (ncol(sparse_mats[[1]]) != k*nar)   ){
-                stop("Error: the length of transition matrix doesn't match!")
+                stop("the length of transition matrix doesn't match!")
             }
         }
         
         
         # examine if each segment is stationary, we force the spectral radius to be 0.9. 
-        print(sparse_mats)
+        #print(sparse_mats)
         max_eigen <- rep(0, m)
         phi <- NULL
         for (j in 1:(m)){
@@ -362,7 +366,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
                 
             }
             
-            print(max_eigen[j] )
+            #print(max_eigen[j] )
             # if the current segment is not stable, we rescale the spectral radius
             if (max_eigen[j] >= 1){
                 phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
@@ -387,7 +391,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
                     
                 }
                 
-                print(max_eigen[j] )
+                #print(max_eigen[j] )
                 # if the current segment is not stable, we rescale the spectral radius
                 if (max_eigen[j] >= 1){
                     phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
@@ -406,7 +410,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
   ###### Group sparse structure for model parameter ######
   if (method == "group sparse"){
     if (!(group_type %in% c("columnwise", "rowwise"))){
-      stop("Error: the group type should be determined correctly!")
+      stop("the group type should be determined correctly!")
     }
     if(is.null(group_mats)){
       group_mats <- vector('list', m)
@@ -475,7 +479,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
             
         }
         
-      print(max_eigen[j] )
+      #print(max_eigen[j] )
       # if the current segment is not stable, we rescale the spectral radius
       if (max_eigen[j] >= 1){
         phi_mats[[j]] <- group_mats[[j]] * spectral_radius / max_eigen[j]
@@ -500,7 +504,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
               
           }
           
-          print(max_eigen[j] )
+          #print(max_eigen[j] )
           # if the current segment is not stable, we rescale the spectral radius
           if (max_eigen[j] >= 1){
               phi_mats[[j]] <- group_mats[[j]] * spectral_radius / max_eigen[j]
@@ -517,21 +521,21 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
   ###### Fixed low rank plus sparse structure model parameter ######
   if (method == "fLS") {
       if (length(rank[!duplicated(rank)]) > 1){
-          stop("Error: the ranks should be all the same!")
+          stop("the ranks should be all the same!")
       }
       
       if (length(info_ratio[!duplicated(info_ratio)]) > 1){
-          stop("Error: the information ratio must be all the same!")
+          stop("the information ratio must be all the same!")
       }
       
       if (lags > 1){
-          stop("Error: the lags should be 1 for low rank plus sparse structure!")
+          stop("the lags should be 1 for low rank plus sparse structure!")
       }
       
       
       # generate sparse components
       if (!(sp_pattern %in% c("diagonal", "off-diagonal", "random"))){
-          stop("Error: the sparsity pattern should be determined correctly!")
+          stop("the sparsity pattern should be determined correctly!")
       }
       
       if(is.null(sparse_mats)){
@@ -562,7 +566,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
       
       if (sp_pattern == 'random'){
           if (length(sp_density) != nar*m){
-              stop("Error: the length of sparsity density doesn't match! should equal number of segment*number of lags.")
+              stop("the length of sparsity density doesn't match! should equal number of segment*number of lags.")
           }
           for (j in 1:m){
               sparse_mats[[j]] <- matrix(0, k, k*nar)
@@ -611,17 +615,17 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
   ###### Low rank plus sparse structure model parameter ######
   if (method == "LS"){
     if (length(rank) != m){
-      stop("Error: the length of ranks doesn't match!")
+      stop("the length of ranks doesn't match!")
     }
     
     if (lags > 1) {
-        stop("Error: the lags should be 1 for Low rank plus sparse structure!")
+        stop("the lags should be 1 for Low rank plus sparse structure!")
     }
     
     # generate sparse components
     
     if (!(sp_pattern %in% c("diagonal", "off-diagonal", "random"))){
-        stop("Error: the sparsity pattern should be determined correctly!")
+        stop("the sparsity pattern should be determined correctly!")
     }
     
     if(is.null(sparse_mats)){
@@ -652,7 +656,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
     
     if (sp_pattern == 'random'){
         if (length(sp_density) != nar*m){
-            stop("Error: the length of sparsity density doesn't match! should equal number of segment*number of lags.")
+            stop("the length of sparsity density doesn't match! should equal number of segment*number of lags.")
         }
         for (j in 1:m){
             sparse_mats[[j]] <- matrix(0, k, k*nar)
@@ -820,7 +824,7 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
 #' m0 <- length(brk) -1; # number of break points
 #' q.t <- 1; # the true AR order
 #' m <- m0+1 #number of segments
-#' try<-simu_var('sparse',nob=nob, k=p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+#' try<-simu_var('sparse',nob=nob,k=p,lags=q.t,brk = brk,sp_pattern="off-diagonal",seed=1)
 #' data <- try$series
 #' data <- as.matrix(data)
 #' #run the bss method
@@ -842,20 +846,23 @@ simu_var<-function(method=c("sparse", "group sparse", "fLS", "LS")[1], nob=300, 
 #' singular_vals <- c(1, 0.75)
 #' info_ratio <- rep(0.35, 3)
 #' try <- simu_var(method = "fLS", nob = nob, k = p, lags = 1, brk = brk, 
-#'                 sigma = as.matrix(diag(p)), signals = signals, 
+#'                 sigma = as.matrix(diag(p)), signals = signals, seed=1, 
 #'                 rank = rank, singular_vals = singular_vals, info_ratio = info_ratio, 
 #'                 sp_pattern = "off-diagonal", spectral_radius = 0.9)
 #' data <- try$series
 #' data <- as.matrix(data)
 #' fit <- tbss(data, method = "fLS", mu = 150)
 #' print(fit)
+#' summary(fit)
 #' plot(fit, data, display = "cp")
 #' plot(fit, data, display = "param")
-tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1], 
-                group.case = c("columnwise", "rowwise")[1], group.index = NULL,
+tbss <- function(data, method = c("sparse", "group sparse", "fLS"), 
+                group.case = c("columnwise", "rowwise"), group.index = NULL,
                 lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL, q = 1, 
                 max.iteration = 50, tol = 10^(-2), block.size = NULL, blocks = NULL,
                 refit = FALSE, use.BIC = TRUE, an.grid = NULL){
+  method <- match.arg(method)
+  group.case <- match.arg(group.case)
   nob <- length(data[,1]); p <- length(data[1,]); 
   second.brk.points <- c(); pts.final <- c();
   
@@ -870,7 +877,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
     n.new <- length(blocks) - 1;
     blocks.size.check <- sapply(c(1:n.new), function(jjj) blocks[jjj+1] - blocks[jjj]  );
     if( sum(blocks.size.check[1: (length(blocks.size.check)-1 )] != block.size ) > 0 ){
-      stop("Error: The block.size and blocks can't match!")
+      stop("The block.size and blocks can't match!")
     }
   }
   
@@ -911,10 +918,10 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
     }
   }
   
-  print("lambda.1.cv:")
-  print(lambda.1.cv)
-  print("lambda.2.cv:")
-  print(lambda.2.cv)
+  # print("lambda.1.cv:")
+  # print(lambda.1.cv)
+  # print("lambda.2.cv:")
+  # print(lambda.2.cv)
   
   
   ######## group index #######
@@ -994,8 +1001,8 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
   print("first.brk.points:")
   print(first.brk.points)
   phi.est.full <- temp.first$phi.full
-  print("cv values:")
-  print(temp.first$cv)
+  # print("cv values:")
+  # print(temp.first$cv)
   print("selected lambda1:")
   print(temp.first$cv1.final)
   print("selected lambda2:")
@@ -1028,8 +1035,8 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
       while(an.idx < length(an.grid)  ){
         an.idx <- an.idx + 1;
         an <- an.grid[an.idx]
-        print("an:")
-        print(an)
+        # print("an:")
+        # print(an)
 
         #remove the boundary points
         remove.ind <- c();
@@ -1187,7 +1194,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
               if(ncol(data_y_temp) == 1){
                   #AR model AR(q)
                   fit <- ar(data_y_temp, FALSE, order.max	= q)
-                  print(fit$ar)
+                  #print(fit$ar)
                   temp[[i]] <- fit$ar
                   
               }else{
@@ -1257,8 +1264,8 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
       while(an.idx < length(an.grid)  ){
         an.idx <- an.idx + 1;
         an <- an.grid[an.idx]
-        print("an:")
-        print(an)
+        # print("an:")
+        # print(an)
         
         #remove the boundary points
         remove.ind <- c();
@@ -1417,7 +1424,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
                   if(ncol(data_y_temp) == 1){
                       #AR model AR(q)
                       fit <- ar(data_y_temp, FALSE, order.max	= q)
-                      print(fit$ar)
+                      #print(fit$ar)
                       temp[[i]] <- fit$ar
                       
                   }else{
@@ -1459,7 +1466,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
                   if(ncol(data_y_temp) == 1){
                       #AR model AR(q)
                       fit <- ar(data_y_temp, FALSE, order.max = q)
-                      print(fit$ar)
+                      #print(fit$ar)
                       temp[[i]] <- fit$ar
                       
                   }else{
@@ -1476,7 +1483,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
               }
               final.result <- structure(list(cp = cp.final, 
                                              sparse_mats = phi.hat.list, 
-                                             lowrank_mats = L_est, 
+                                             lowrank_mats = list(L_est), 
                                              est_phi = est_phi, 
                                              time = time.comparison), class = "VARDetect.result")
               return(final.result)
@@ -1490,7 +1497,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
                                              q = q, 
                                              cp = final.pts.res[[an.idx.final]], 
                                              sparse_mats = final.phi.hat.list.res[[an.idx.final]], 
-                                             lowrank_mats = L_est, 
+                                             lowrank_mats = list(L_est), 
                                              est_phi = est_phi, 
                                              time = time.comparison), class = "VARDetect.result")
               return(final.result)
@@ -1530,6 +1537,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS")[1],
 #'   \item{cv1.final}{the selected lambda_1}
 #'   \item{cv2.final}{the selected lambda_2}
 #' }
+#' @keywords internal
 #' 
 first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iteration = max.iteration, tol = tol,cv.index, blocks){
   
@@ -1689,6 +1697,7 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
 #'   \item{cv1.final}{the selected lambda_1}
 #'   \item{cv2.final}{the selected lambda_2}
 #' }
+#' @keywords internal
 #' 
 first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iteration = max.iteration, tol = tol,
                                     cv.index, blocks, group.case= "columnwise", group.index){
@@ -1696,7 +1705,7 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.
   cv.l <- length(cv.index); data.org <- data.temp; nob.org <- length(data.temp[,1]); p <- length(data.temp[1,]); n.new <- length(blocks) - 1;
   blocks.size <- sapply(c(1:n.new), function(jjj) blocks[jjj+1] - blocks[jjj]  );
   
-  #create the tuning parmaeter combination of lambda1 and lambda2
+  #create the tuning parameter combination of lambda1 and lambda2
   lambda.full <- expand.grid(lambda.1.cv,lambda.2.cv)
   kk <- length(lambda.full[,1]);
   
@@ -1877,6 +1886,8 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.
 #'   \item{BIC}{BIC value}
 #'   \item{HBIC}{HBIC value}
 #' }
+#' @keywords internal
+#' 
 BIC <- function(residual, phi, gamma.val = 1){
   p<- length(phi[, 1]);
   q <- length(phi[1, ])/p;
@@ -1939,10 +1950,10 @@ BIC <- function(residual, phi, gamma.val = 1){
 #'   \item{omega}{the selected Omega value}
 #' }
 #' @importFrom stats kmeans
-#' 
+#' @keywords internal
 #' 
 second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1000, tol = 10^(-4), pts, an, 
-                              phi.est.full = NULL, blocks = NULL, use.BIC = FALSE, group.case= "columnwise", group.index = NULL){
+                              phi.est.full = NULL, blocks = NULL, use.BIC = FALSE, group.case = "columnwise", group.index = NULL){
   m <- length(pts); 
   p = length(data[1,])
   
@@ -1976,8 +1987,8 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
   #use the maximum value of V.redundant as the reference V value
   # V <- c(V,rep(max(V.redundant),floor(2*length(V))))
   V <- c(V, rep(max(V.redundant), 2))
-  print("V:")
-  print(V)
+  #print("V:")
+  #print(V)
   
   if(use.BIC == FALSE){
     if( length(unique(V)) <= 2 ){
@@ -2025,8 +2036,8 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
       omega.old <- omega
       #use kmeans to cluster the V 
       clus.2 <- kmeans(V, centers = 2); fit.2 <- clus.2$betweenss/clus.2$totss; 
-      print("fit.2:")
-      print(fit.2)
+      #print("fit.2:")
+      #print(fit.2)
       if(fit.2 < 0.20){
         #no change points: set omeage = max(V)
         omega <- max(V) + 10^(-6);
@@ -2041,7 +2052,7 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
         if( clus.2$centers[1] > clus.2$centers[2]  ){
           omega <- min(V[which(loc==1)]) - 10^(-6) ;
           if(loc[length(loc)] == 1){
-            print("large reference! break")
+            #print("large reference! break")
             # omega <- max(V)  + 10^(-6);
             # pts.sel <- c(pts.sel);
             # break
@@ -2053,7 +2064,7 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
         if( clus.2$centers[1] < clus.2$centers[2]  ){
           omega <- min(V[which(loc==2)]) - 10^(-6) ;
           if(loc[length(loc)] == 2){
-            print("large reference! break")
+            #print("large reference! break")
             # omega <- max(V) + 10^(-6);
             # pts.sel <- c(pts.sel);
             # break
@@ -2062,15 +2073,15 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
             loc.idx <- which(loc==2);
           }
         }
-        print(pts)
-        print(loc.idx)
+        #print(pts)
+        #print(loc.idx)
         pts.sel <- sort(c(pts.sel, pts[loc.idx]))
         V[loc.idx] <- V[length(V)]
         loc.block.full <- match(pts.sel, blocks)
         # print(pts.sel)
       }
-      print("pts.sel:")
-      print(pts.sel)
+      #print("pts.sel:")
+      #print(pts.sel)
       
       m.temp <- length(pts.sel)
       if(m.temp == 0){
@@ -2172,6 +2183,7 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
 #'   \item{L.n.1}{A vector of loss functions that include some break point}
 #'   \item{L.n.2}{A vector of loss functions that exclude some break point}
 #' }
+#' @keywords internal
 #' 
 break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration = 1000, tol = 10^(-4),  pts, an, 
                                 group.case= "columnwise", group.index = NULL){
@@ -2269,6 +2281,7 @@ break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration =
 #' \describe{
 #'   \item{pts}{a set of final selected break point after the third exhaustive search step}
 #' }
+#' @keywords internal
 #' 
 third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = tol, pts.list, 
                               an, phi.est.full = NULL, phi.local.1 = NULL, phi.local.2 = NULL,
@@ -2373,6 +2386,7 @@ third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = to
 #' @param pts vector of candidate change points
 #' @param an radius of the cluster
 #' @return A list of change points clusters
+#' @keywords internal
 #' 
 block.finder <- function(pts,an){
   nn <- length(pts);
@@ -2415,6 +2429,8 @@ block.finder <- function(pts,an){
 #' @param p the dimension of time series components
 #' @param h the length of observation to predict
 #' @return prediction matrix
+#' @keywords internal
+#' 
 #'
 pred.block <- function(Y,phi,q,nob,p,h){
   concat.Y <- matrix(0,p,q+h); concat.Y[,1:q] <- Y[,(nob-q+1):nob];
@@ -2435,6 +2451,7 @@ pred.block <- function(Y,phi,q,nob,p,h){
 #' @param p the dimension of time series components
 #' @param h the h-th observation to predict
 #' @return prediction matrix
+#' @keywords internal
 #'
 pred <- function(Y,phi,q,nob,p,h){
   concat.Y <- matrix(0,p,q+h); concat.Y[,1:q] <- Y[,(nob-q+1):nob];
@@ -2525,6 +2542,7 @@ plot_matrix <- function (phi, p) {
 #' @param pts the estimated change points
 #' @param brk the true change points
 #' @return a vector of timepoints
+#' @keywords internal
 #'
 remove.extra.pts <- function(pts, brk){
   m.hat <- length(brk)-1;
@@ -2563,6 +2581,8 @@ remove.extra.pts <- function(pts, brk){
 #'     \item{obj.vals}{Values of objective function for all iterations}
 #'     \item{rel.err}{Relative error to the true model parameter, only available for simulation}
 #' }
+#' @keywords internal
+#' 
 fista.nuclear <- function(A, b, lambda, d, niter, backtracking = TRUE, phi.true){
     tnew = t <- 1
     x <- matrix(0, d, d)
@@ -2614,6 +2634,8 @@ fista.nuclear <- function(A, b, lambda, d, niter, backtracking = TRUE, phi.true)
 #' @param AtA Gram matrix obtained by design matrix
 #' @param Atb inner product for design matrix A and correspond vector b
 #' @return value of proximal function
+#' @keywords internal
+#' 
 prox.nuclear.func.fLS <- function(y, A, b, L, lambda, AtA, Atb){
     Y <- y - (1 / L) * gradf.func(y, AtA, Atb)
     d <- shrinkage.lr(svd(Y)$d, 2*lambda / L)
@@ -2657,8 +2679,8 @@ detection_check <- function(pts.final, brk, nob, critval = 5){
     for(i in 1:N){
         if ( length(pts.final[[i]]) > (m-1)   ){
             pts.final[[i]] <- remove.extra.pts(pts.final[[i]], brk);
-            print("extra points exists!"); 
-            print(i)
+            #print("extra points exists!"); 
+            #print(i)
         }
         if ( length(pts.final[[i]]) == 0 ) {  
             pts.final[[i]] <- rep(0, m-1);
@@ -2972,7 +2994,7 @@ eval_func <- function(true_mats, est_mats){
 plot_granger <- function(est_mats, threshold = 0.1, layout){
     layout_options <- c("circle", "star", "nicely")
     if(!(layout %in% layout_options)){
-        stop("Error: Layouts are only available for circle, star, and nicely!!")
+        stop("Layouts are only available for circle, star, and nicely!!")
     }
     seg_length <- length(est_mats)
     for(i in 1:seg_length){
@@ -3065,7 +3087,7 @@ plot_density <- function(est_mats, threshold = 0.1){
 #' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
 #' m <- length(brk)
 #' q.t <- 1
-#' try <- simu_var('sparse', nob = nob, k = p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+#' try <- simu_var('sparse',nob=nob,k=p,lags=q.t,brk=brk,sp_pattern="off-diagonal",seed = 1)
 #' data <- try$series
 #' data <- as.matrix(data)
 #' fit <- tbss(data, method = "sparse", q = q.t)
@@ -3075,9 +3097,11 @@ plot_density <- function(est_mats, threshold = 0.1){
 #' plot(fit, display = "density", threshold = 0.2)
 #' @export
 plot.VARDetect.result <- function(x, 
-                                  display = c("cp", "param", "granger", "density")[1],
+                                  display = c("cp", "param", "granger", "density"),
                                   threshold = 0.1, 
-                                  layout = c("circle", "star", "nicely")[1], ...){
+                                  layout = c("circle", "star", "nicely"), ...){
+    display <- match.arg(display)
+    layout <- match.arg(layout)
     n <- dim(x$data)[1]
     p <- dim(x$data)[2]
     if(display == "cp"){
@@ -3113,6 +3137,7 @@ plot.VARDetect.result <- function(x,
 #' @description Summary method for objects of class \code{VARDetect.result}
 #' @method summary VARDetect.result
 #' @param object a \code{VARDetect.result} object
+#' @param threshold A numeric positive value, used to determine the threshold of nonzero entries
 #' @param ... not in use
 #' @return A series of summary, including the estimated change points, running time
 #' @examples
@@ -3121,13 +3146,13 @@ plot.VARDetect.result <- function(x,
 #' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
 #' m <- length(brk)
 #' q.t <- 1
-#' try <- simu_var('sparse', nob = nob, k = p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+#' try <- simu_var('sparse',nob=nob,k=p,lags=q.t,brk=brk,sp_pattern="off-diagonal",seed=1)
 #' data <- try$series
 #' data <- as.matrix(data)
 #' fit <- tbss(data, method = "sparse", q = q.t)
 #' summary(fit)
 #' @export
-summary.VARDetect.result <- function(object, ...){
+summary.VARDetect.result <- function(object, threshold = 0.1, ...){
     ncp <- length(object$cp)
     if(is.null(object$est_phi)){
         cat("No change point is finally detected! \n")
@@ -3143,7 +3168,7 @@ summary.VARDetect.result <- function(object, ...){
             d <- 0
             for(r in 1:dim(mat)[1]){
                 for(c in 1:dim(mat)[2]){
-                    if(mat[r,c] != 0){
+                    if(abs(mat[r,c]) > threshold){
                         d <- d + 1
                     }
                 }
@@ -3191,7 +3216,7 @@ summary.VARDetect.result <- function(object, ...){
 #' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
 #' m <- length(brk)
 #' q.t <- 1
-#' try <- simu_var('sparse', nob = nob, k = p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+#' try <- simu_var('sparse',nob=nob,k=p,lags=q.t,brk=brk,sp_pattern="off-diagonal",seed=1)
 #' data <- try$series
 #' data <- as.matrix(data)
 #' fit <- tbss(data, method = "sparse", q = q.t)
@@ -3268,16 +3293,22 @@ print.VARDetect.result <- function(x, ...){
 #'                       sp_pattern = "random", est_method = "sparse", q = q.t, 
 #'                       refit = TRUE)
 #' }
-simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS")[1], nob, k, lags = 1, 
+simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS"), nob, k, lags = 1, 
                       lags_vector = NULL, brk, sigma, skip = 50, group_mats = NULL, 
-                      group_type = c("columnwise", "rowwise")[1], group_index = NULL, 
+                      group_type = c("columnwise", "rowwise"), group_index = NULL, 
                       sparse_mats = NULL, sp_density = NULL, signals = NULL, rank = NULL, info_ratio = NULL, 
-                      sp_pattern = c("off-diagonal", "diagoanl", "random")[1], 
-                      singular_vals = NULL, spectral_radius = 0.9, est_method = c("sparse", "group sparse", "fLS")[1], 
+                      sp_pattern = c("off-diagonal", "diagoanl", "random"), 
+                      singular_vals = NULL, spectral_radius = 0.9, est_method = c("sparse", "group sparse", "fLS"), 
                       q = 1, tol = 1e-2, lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL, 
-                      group.index = NULL, group.case = c("columnwise", "rowwise")[1], max.iteration = 100, 
+                      group.index = NULL, group.case = c("columnwise", "rowwise"), max.iteration = 100, 
                       refit = FALSE, block.size = NULL, blocks = NULL, use.BIC = TRUE, an.grid = NULL){
+    simu_method <- match.arg(simu_method)
+    group_type <- match.arg(group_type)
+    sp_pattern <- match.arg(sp_pattern)
+    est_method <- match.arg(est_method)
+    group.case <- match.arg(group.case)
     # storage variables 
+    
     est_cps <- vector('list', nreps)
     est_sparse_mats <- vector('list', nreps)
     est_lowrank_mats <- vector('list', nreps)
@@ -3345,7 +3376,7 @@ simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS")[1]
 #' @param object A S3 object of class \code{VARDetect.simu.result}
 #' @param critical A positive integer, set as the critical value defined in selection rate, to control the range of success, default is 5
 #' @param ... not in use 
-#' @return A series of summary, including the selection rate, Hausdorff distance, and statistical measurments, running times
+#' @return A series of summary, including the selection rate, Hausdorff distance, and statistical measurements, running times
 #' @examples
 #' \donttest{
 #' nob <- 4000; p <- 15

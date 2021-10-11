@@ -4,10 +4,12 @@
 \alias{summary.VARDetect.result}
 \title{Funciton to summarize the change points estimated by VARDetect}
 \usage{
-\method{summary}{VARDetect.result}(object, ...)
+\method{summary}{VARDetect.result}(object, threshold = 0.1, ...)
 }
 \arguments{
 \item{object}{a \code{VARDetect.result} object}
+
+\item{threshold}{A numeric positive value, used to determine the threshold of nonzero entries}
 
 \item{...}{not in use}
 }
@@ -23,7 +25,7 @@ p <- 15
 brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
 m <- length(brk)
 q.t <- 1
-try <- simu_var('sparse', nob = nob, k = p, lags=q.t, brk = brk, sp_pattern="off-diagonal")
+try <- simu_var('sparse',nob=nob,k=p,lags=q.t,brk=brk,sp_pattern="off-diagonal",seed=1)
 data <- try$series
 data <- as.matrix(data)
 fit <- tbss(data, method = "sparse", q = q.t)

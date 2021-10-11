@@ -31,3 +31,4 @@ A list object, which includes the followings:
 \description{
 Single change point detection for low-rank plus sparse model using minimizing SSE method.
 }
+\keyword{internal}

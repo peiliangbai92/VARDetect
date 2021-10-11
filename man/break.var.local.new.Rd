@@ -48,3 +48,4 @@ A list oject, which contains the followings
 \description{
 Compute local loss function.
 }
+\keyword{internal}

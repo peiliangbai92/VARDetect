@@ -14,7 +14,7 @@
 \item{...}{not in use}
 }
 \value{
-A series of summary, including the selection rate, Hausdorff distance, and statistical measurments, running times
+A series of summary, including the selection rate, Hausdorff distance, and statistical measurements, running times
 }
 \description{
 A function to summarize the results for simulation class \code{VARDetect.simu.result}

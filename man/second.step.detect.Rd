@@ -39,3 +39,4 @@ A list object includes
 \description{
 Backward elimination algorithm function for screening
 }
+\keyword{internal}

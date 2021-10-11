@@ -17,3 +17,4 @@ Value of l1-norm penalty term
 \description{
 L1-norm penalty for sparse component
 }
+\keyword{internal}

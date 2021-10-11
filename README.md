@@ -12,9 +12,9 @@ install.packages("VARDetect")
 ```
 
 
-You could download the R package [VARDetect_0.1.3.tar.gz](VARDetect_0.1.3.tar.gz) and locally install the package using the tar.gz File:
+You could download the R package [VARDetect_0.1.5.tar.gz](VARDetect_0.1.5.tar.gz) and locally install the package using the tar.gz File:
 ```
-install.packages("VARDetect_0.1.3.tar.gz", repos = NULL, type="source")
+install.packages("VARDetect_0.1.5.tar.gz", repos = NULL, type="source")
 ```
 
 To install the latest version of the package from GitHub:
@@ -34,7 +34,7 @@ A BibTeX entry for LaTeX users is
     title = {VARDetect: Multiple Change Point Detection in Structural VAR Models},
     author = {Peiliang Bai, Yue Bai, Abolfazl Safikhani and George Michailidis},
     year = {2021},
-    note = {R package version 0.1.3},
+    note = {R package version 0.1.5},
     url = {https://CRAN.R-project.org/package=VARDetect},
   }
  ```
