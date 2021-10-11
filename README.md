@@ -26,7 +26,7 @@ devtools::install_github("peiliangbai92/VARDetect")
 To cite package **VARDetect** in publications use:
 
   Peiliang Bai, Yue Bai, Abolfazl Safikhani and George Michailidis (2021). VARDetect: Multiple Change Point Detection in Structural VAR Models
-  R package version 0.1.3. https://CRAN.R-project.org/package=VARDetect
+  R package version 0.1.5. https://CRAN.R-project.org/package=VARDetect
 
 A BibTeX entry for LaTeX users is
 ```
