@@ -67,14 +67,15 @@ NULL
 #' plot(fit, data, display = "param")
 #' }
 lstsp <- function(data, lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.seq = NULL, 
-                  lambda.2, mu.2, lambda.3, mu.3, alpha_L = 0.25, omega = NULL, h = NULL, 
+                  lambda.2 = NULL, mu.2 = NULL, lambda.3 = NULL, mu.3 = NULL, alpha_L = 0.25, omega = NULL, h = NULL, 
                   step.size = NULL, tol = 1e-4, niter = 100, backtracking = TRUE, skip = 5, 
                   cv = FALSE, nfold = NULL, verbose = FALSE){
+    
     ###### model dimensions
     n <- dim(data)[1]
     p <- dim(data)[2]
     if(is.null(h)){
-        h <- 2*floor(sqrt(n))+1
+        h <- 2 * floor(sqrt(n)) + 1
     }
     
     ###### Step 1: rolling-window find candidate change points ######
@@ -87,7 +88,7 @@ lstsp <- function(data, lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.
     ###### Step 2: screening out redundant candidate and obtain the final change points ######
     N <- n - 1
     if(is.null(omega)){
-        omega <- (1/0.05) * (((log(N))^1)*log(p))
+        omega <- (1 / 0.05) * log(N) * log(p)
     }
     screen_select <- second.step.detect(data, candi_pts, omega, lambda.2, mu.2, 
                                         alpha_L = alpha_L, verbose = verbose)
@@ -95,8 +96,8 @@ lstsp <- function(data, lambda.1 = NULL, mu.1 = NULL, lambda.1.seq = NULL, mu.1.
     
     ###### Step 3: estimate model parameters by using final change points ######
     pts <- c(1, final.pts, n)
-    est_phi = sp_mats = lr_mats <- vector('list', length(pts)-1)
-    for(i in 1:(length(pts)-1)){
+    est_phi = sp_mats = lr_mats <- vector('list', length(pts) - 1)
+    for(i in 1:(length(pts) - 1)){
         s <- pts[i]
         e <- pts[i+1]
         interval_data <- data[s:e, ]
@@ -150,22 +151,22 @@ detect.LpS <- function(data, lambda, mu, alpha_L, skip = 50){
     n <- dim(data)[1]
     k <- dim(data)[2]
     
-    lr_est <- vector("list", n - 2*skip)
-    sp_est <- vector('list', n - 2*skip)
+    lr_est <- vector("list", n - 2 * skip)
+    sp_est <- vector('list', n - 2 * skip)
     for(t in (skip+1):(n-skip)){
         ###### segmentation of dataset ######
         seg1 <- data[1:t,]
-        seg2 <- data[((t+1):n),]
+        seg2 <- data[(t + 1):n,]
         
         ### fitting the left-side dataset
-        X1 <- seg1[1:(t-1),]
+        X1 <- seg1[1:(t - 1),]
         Y1 <- seg1[2:t,]
         fit1 <- fista.LpS(X1, Y1, lambda = lambda[1], mu = mu[1], alpha_L = alpha_L, 
                           niter = 100, backtracking = TRUE, x.true = diag(k))
         
         ### fitting the right-side dataset
-        X2 <- seg2[1:(n-t-1),]
-        Y2 <- seg2[2:(n-t),]
+        X2 <- seg2[1:(n - t - 1),]
+        Y2 <- seg2[2:(n - t),]
         fit2 <- fista.LpS(X2, Y2, lambda = lambda[2], mu = mu[2], alpha_L = alpha_L, 
                           niter = 100, backtracking = TRUE, x.true = diag(k))
         
@@ -183,8 +184,8 @@ detect.LpS <- function(data, lambda, mu, alpha_L, skip = 50){
     
     idx <- which.min(sse) + skip
     
-    L_hat1 <- lr_est[[idx-skip]][,c(1:k)]; L_hat2 <- lr_est[[idx-skip]][,-(c(1:k))]
-    S_hat1 <- sp_est[[idx-skip]][,c(1:k)]; S_hat2 <- sp_est[[idx-skip]][,-(c(1:k))]
+    L_hat1 <- lr_est[[idx - skip]][,c(1:k)]; L_hat2 <- lr_est[[idx - skip]][,-(c(1:k))]
+    S_hat1 <- sp_est[[idx - skip]][,c(1:k)]; S_hat2 <- sp_est[[idx - skip]][,-(c(1:k))]
     return(list(cp = idx, S_hat1 = S_hat1, S_hat2 = S_hat2, L_hat1 = L_hat1, L_hat2 = L_hat2, sse = sse))
 }
 
@@ -216,18 +217,18 @@ cv.detect.LpS <- function(data, lambda.1.seq = NULL, mu.1.seq = NULL,
     k <- dim(data)[2]
 
     if(is.null(lambda.1.seq)){
-        lambda.1.seq <- sqrt(log(k)/n) * exp(seq(-2, 5, length.out = nfold))
+        lambda.1.seq <- sqrt(log(k) / n) * exp(seq(-2, 5, length.out = nfold))
     }
     if(is.null(mu.1.seq)){
-        mu.1.seq <- sqrt((k)/n) * exp(seq(-2, 5, length.out = nfold))
+        mu.1.seq <- sqrt((k) / n) * exp(seq(-2, 5, length.out = nfold))
     }
     
-    lr_est <- vector("list", n-2*skip)
-    sp_est <- vector('list', n-2*skip)
-    for(t in (skip+1):(n-skip)){
+    lr_est <- vector("list", n - 2 * skip)
+    sp_est <- vector('list', n - 2 * skip)
+    for(t in (skip + 1):(n - skip)){
         ###### segmentation of dataset ######
         seg1 <- data[1:t,]
-        seg2 <- data[((t+1):n),]
+        seg2 <- data[(t + 1):n,]
         
         ###### tuning parameter selection for the left-side segment ######
         ret <- cv.tuning.selection(seg1, lambda.1.seq, mu.1.seq, 
@@ -236,7 +237,7 @@ cv.detect.LpS <- function(data, lambda.1.seq = NULL, mu.1.seq = NULL,
         mu1 <- ret$mu
         
         ### fitting the left-side dataset
-        X1 <- seg1[1:(t-1),]
+        X1 <- seg1[1:(t - 1),]
         Y1 <- seg1[2:t,]
         fit1 <- fista.LpS(X1, Y1, lambda = lambda1, mu = mu1, alpha_L = alpha_L, 
                           niter = 100, backtracking = TRUE, x.true = diag(k))
@@ -248,8 +249,8 @@ cv.detect.LpS <- function(data, lambda.1.seq = NULL, mu.1.seq = NULL,
         mu2 <- ret$mu
         
         # fitting the right-side dataset
-        X2 <- seg2[1:(n-t-1),]
-        Y2 <- seg2[2:(n-t),]
+        X2 <- seg2[1:(n - t - 1),]
+        Y2 <- seg2[2:(n - t),]
         fit2 <- fista.LpS(X2, Y2, lambda = lambda2, mu = mu2, alpha_L = alpha_L, 
                           niter = 100, backtracking = TRUE, x.true = diag(k))
         
@@ -260,14 +261,14 @@ cv.detect.LpS <- function(data, lambda.1.seq = NULL, mu.1.seq = NULL,
         lr_est[[t-skip]] <- cbind(t(fit1$lr.comp), t(fit2$lr.comp))
         sp_est[[t-skip]] <- cbind(t(fit1$sparse.comp), t(fit2$sparse.comp))
         
-        pred.err1 <- (1/n) * norm(Y1 - X1 %*% t(phi.hat1), "F")^2
-        pred.err2 <- (1/n) * norm(Y2 - X2 %*% t(phi.hat2), "F")^2
+        pred.err1 <- (1 / n) * norm(Y1 - X1 %*% t(phi.hat1), "F")^2
+        pred.err2 <- (1 / n) * norm(Y2 - X2 %*% t(phi.hat2), "F")^2
         sse <- c(sse, pred.err1 + pred.err2)
     }
     
     idx <- which.min(sse) + skip
-    L_hat1 <- lr_est[[idx-skip]][,c(1:k)]; L_hat2 <- lr_est[[idx-skip]][,-(c(1:k))]
-    S_hat1 <- sp_est[[idx-skip]][,c(1:k)]; S_hat2 <- sp_est[[idx-skip]][,-(c(1:k))]
+    L_hat1 <- lr_est[[idx - skip]][,c(1:k)]; L_hat2 <- lr_est[[idx - skip]][,-(c(1:k))]
+    S_hat1 <- sp_est[[idx - skip]][,c(1:k)]; S_hat2 <- sp_est[[idx - skip]][,-(c(1:k))]
     return(list(cp = idx, S_hat1 = S_hat1, S_hat2 = S_hat2, L_hat1 = L_hat1, L_hat2 = L_hat2, sse = sse))
 }
 
@@ -289,13 +290,11 @@ cv.detect.LpS <- function(data, lambda.1.seq = NULL, mu.1.seq = NULL,
 cv.separate <- function(period, nfold = 5){
     n <- dim(period)[1]
     if(n < 10){
-        # print("Warning: too few data points!")
-        # break
         stop("too few data points!")
     }else{
         cv.index <- c()
         for(i in 1:n){
-            if(i %% nfold == (nfold-1)){
+            if(i %% nfold == (nfold - 1)){
                 cv.index <- c(cv.index, i)
             }
         }
@@ -329,10 +328,10 @@ cv.tuning.selection <- function(data, lambda.seq, mu.seq, alpha_L = 0.25, nfold 
     ntrain <- dim(data_train)[1]
     ntest <- dim(data_test)[1]
     
-    X_train <- data_train[1:(ntrain-1),]
+    X_train <- data_train[1:(ntrain - 1),]
     Y_train <- data_train[2:ntrain,]
     
-    X_test <- data_test[1:(ntest-1),]
+    X_test <- data_test[1:(ntest - 1),]
     Y_test <- data_test[2:ntest,]
     
     ### grid search part: find the tuning parameter that minimizes the prediction error on test set
@@ -345,7 +344,7 @@ cv.tuning.selection <- function(data, lambda.seq, mu.seq, alpha_L = 0.25, nfold 
             mu <- mu.seq[c]
             fit <- fista.LpS(X_train, Y_train, lambda = lambda, mu = mu, alpha_L = alpha_L, 
                              niter = 100, backtracking = TRUE, diag(k))
-            if(qr(fit$lr.comp)$rank == 0 | qr(fit$lr.comp)$rank > k/2){
+            if(qr(fit$lr.comp)$rank == 0 | qr(fit$lr.comp)$rank > k / 2){
                 grid[r,c] <- Inf
             }else{
                 residual <- Y_test - X_test %*% (fit$sparse.comp + fit$lr.comp)
@@ -487,7 +486,7 @@ first.step.detect <- function(data, h, step.size = NULL, lambda, mu, alpha_L = 0
             e <- n
         }
         if(verbose){
-            print(paste("Finished interval:", s, e))
+            cat(paste("Finished interval:", s, e))
         }
     }
     first.step.cp <- candi_cp[-1]
@@ -540,7 +539,7 @@ second.step.detect <- function(data, pts, omega, lambda, mu, alpha_L = 0.25, ver
         }else{
             pts <- pts[-which(L.n == min(L.n))]
             if(verbose){
-                print(pts)
+                cat(pts)
             }
         }
     }
@@ -889,6 +888,7 @@ simu_lstsp <- function(nreps, simu_method = c("LS"), nob, k, lags = 1,
     
     group_type <- match.arg(group_type)
     sp_pattern <- match.arg(sp_pattern)
+    
     # storage variables 
     est_cps <- vector('list', nreps)
     est_sparse_mats <- vector('list', nreps)
