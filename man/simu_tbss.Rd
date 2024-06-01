@@ -38,7 +38,8 @@ simu_tbss(
   block.size = NULL,
   blocks = NULL,
   use.BIC = TRUE,
-  an.grid = NULL
+  an.grid = NULL,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -109,6 +110,8 @@ simu_tbss(
 \item{use.BIC}{use BIC for k-means part}
 
 \item{an.grid}{a vector of an for grid searching}
+
+\item{verbose}{a Boolean argument; if TRUE, function provides detailed information. Default is FALSE}
 }
 \value{
 A S3 object of class, named \code{VARDetect.simu.result}
