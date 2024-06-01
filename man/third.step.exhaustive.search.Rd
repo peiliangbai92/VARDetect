@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions_BSS_SGL.R
 \name{third.step.exhaustive.search}
 \alias{third.step.exhaustive.search}
-\title{exhuastive search step (third step).}
+\title{Exhaustive search step (third step).}
 \usage{
 third.step.exhaustive.search(
   data,

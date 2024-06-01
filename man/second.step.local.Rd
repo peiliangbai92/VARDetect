@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions_BSS_SGL.R
 \name{second.step.local}
 \alias{second.step.local}
-\title{local sreening step (second step).}
+\title{local screening step (second step).}
 \usage{
 second.step.local(
   method = "sparse",

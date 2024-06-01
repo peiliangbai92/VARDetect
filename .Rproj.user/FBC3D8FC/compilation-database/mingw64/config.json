@@ -1,0 +1,24 @@
+{
+    "args": [
+        "-std=gnu++17",
+        "-IC:/PROGRA~1/R/R-44~1.0/include",
+        "-DNDEBUG",
+        "-IC:/Users/baipl/AppData/Local/R/win-library/4.4/Rcpp/include",
+        "-DEIGEN_DONT_VECTORIZE",
+        "-nostdinc",
+        "-IC:/RBuildTools/4.4/x86_64-w64-mingw32.static.posix/bin/../lib/gcc/x86_64-w64-mingw32.static.posix/13.2.0/include/c++",
+        "-IC:/RBuildTools/4.4/x86_64-w64-mingw32.static.posix/bin/../lib/gcc/x86_64-w64-mingw32.static.posix/13.2.0/include/c++/x86_64-w64-mingw32.static.posix",
+        "-IC:/RBuildTools/4.4/x86_64-w64-mingw32.static.posix/bin/../lib/gcc/x86_64-w64-mingw32.static.posix/13.2.0/include/c++/backward",
+        "-IC:/RBuildTools/4.4/x86_64-w64-mingw32.static.posix/bin/../lib/gcc/x86_64-w64-mingw32.static.posix/13.2.0/include",
+        "-IC:/RBuildTools/4.4/x86_64-w64-mingw32.static.posix/bin/../lib/gcc/x86_64-w64-mingw32.static.posix/13.2.0/../../../../include",
+        "-IC:/RBuildTools/4.4/x86_64-w64-mingw32.static.posix/bin/../lib/gcc/x86_64-w64-mingw32.static.posix/13.2.0/include-fixed",
+        "-include",
+        "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/.Rproj.user/FBC3D8FC/compilation-database/mingw64/cpp-definitions.h"
+    ],
+    "pch": "Rcpp",
+    "is_cpp": true,
+    "hash": "1717032270",
+    "compiler": "9381606054783649534",
+    "rversion": "4.4.0",
+    "dbversion": 4
+}

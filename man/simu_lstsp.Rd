@@ -130,7 +130,7 @@ A S3 object of class \code{VARDetect.simu.result}, containing the following entr
 \describe{
     \item{sizes}{A 2-d numeric vector, indicating the size of time series data}
     \item{true_lag}{True time lags for the process, here is fixed to be 1.}
-    \item{true_lagvector}{A vector recording the time lags for different segments, not available under this model setting, 
+    \item{true_lagvector}{A vector recording the time lags for different segments, not available under this model setting,
                           here is fixed to be NULL}
     \item{true_cp}{True change points for simulation, a numeric vector}
     \item{true_sparse}{A list of numeric matrices, indicating the true sparse components for all segments}
@@ -158,12 +158,12 @@ singular_vals <- c(1, 0.75, 0.5)
 info_ratio <- rep(0.35, 2)
 lambda1 = lambda2 = lambda3 <- c(2.5, 2.5)
 mu1 = mu2 = mu3 <- c(15, 15)
-try_simu <- simu_lstsp(nreps = 3, simu_method = "LS", nob = nob, k = p, 
-                       brk = brk, sigma = diag(p), signals = signals, 
-                       rank = rank, singular_vals = singular_vals, 
-                       info_ratio = info_ratio, sp_pattern = "off-diagonal", 
-                       spectral_radius = 0.9, lambda.1 = lambda1, mu.1 = mu1, 
-                       lambda.2 = lambda2, mu.2 = mu2, lambda.3 = lambda3, 
+try_simu <- simu_lstsp(nreps = 3, simu_method = "LS", nob = nob, k = p,
+                       brk = brk, sigma = diag(p), signals = signals,
+                       rank = rank, singular_vals = singular_vals,
+                       info_ratio = info_ratio, sp_pattern = "off-diagonal",
+                       spectral_radius = 0.9, lambda.1 = lambda1, mu.1 = mu1,
+                       lambda.2 = lambda2, mu.2 = mu2, lambda.3 = lambda3,
                        mu.3 = mu3, step.size = 5, niter = 20, rolling.skip = 5,
                        cv = FALSE, verbose = TRUE)
 summary(try_simu, critical = 5)

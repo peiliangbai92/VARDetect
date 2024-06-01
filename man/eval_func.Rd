@@ -9,7 +9,7 @@ eval_func(true_mats, est_mats)
 \arguments{
 \item{true_mats}{a list of true matrices for all segments, the length of list equals to the true number of segments}
 
-\item{est_mats}{a list of estimated matrices for all simulation replications, for each element, it is a list of numeric matrices, 
+\item{est_mats}{a list of estimated matrices for all simulation replications, for each element, it is a list of numeric matrices,
 representing the estimated matrices for segments}
 }
 \value{
@@ -34,6 +34,6 @@ for(i in 1:5){
     est_mats[[i]] <- vector('list', 2)
     est_mats[[i]][[1]] <- matrix(sample(c(0, 1, 2), size = 4, replace = TRUE), 2, 2, byrow = TRUE)
     est_mats[[i]][[2]] <- matrix(sample(c(0, 1), size = 4, replace = TRUE), 2, 2, byrow = TRUE)
-} 
+}
 perf_eval <- eval_func(true_mats, est_mats)
 }

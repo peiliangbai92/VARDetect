@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions_BSS_SGL.R
 \name{BIC}
 \alias{BIC}
-\title{BIC  and HBIC function}
+\title{BIC and HBIC function}
 \usage{
 BIC(residual, phi, gamma.val = 1)
 }
@@ -21,6 +21,6 @@ A list object, which contains the followings
 }
 }
 \description{
-BIC  and HBIC function
+BIC and HBIC function
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions_BSS_SGL.R
 \name{tbss}
 \alias{tbss}
-\title{block segmentation scheme (BSS).}
+\title{Block segmentation scheme (BSS).}
 \usage{
 tbss(
   data,
@@ -19,7 +19,8 @@ tbss(
   blocks = NULL,
   refit = FALSE,
   use.BIC = TRUE,
-  an.grid = NULL
+  an.grid = NULL,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -52,6 +53,8 @@ tbss(
 \item{use.BIC}{use BIC for k-means part}
 
 \item{an.grid}{a vector of an for grid searching}
+
+\item{verbose}{a boolean argument to determine whether provide detailed outputs for each step. Default is FALSE}
 }
 \value{
 S3 object of class \code{VARDetect.result}, which contains the followings
@@ -66,12 +69,12 @@ S3 object of class \code{VARDetect.result}, which contains the followings
 }
 }
 \description{
-Perform the block segmentation scheme (BSS) algorithm to detect the structural breaks 
+Perform the block segmentation scheme (BSS) algorithm to detect the structural breaks
 in large scale high-dimensional non-stationary VAR models.
 }
 \examples{
 #### sparse VAR model
-nob <- (10^3); #number of time points
+nob <- (10^3) # number of time points
 p <- 15; # number of time series components
 brk <- c(floor(nob/3),floor(2*nob/3),nob+1); # true break points with nob+1 as the last element
 m0 <- length(brk) -1; # number of break points
@@ -98,9 +101,9 @@ signals <- c(-0.7, 0.7, -0.7)
 rank <- c(2, 2, 2)
 singular_vals <- c(1, 0.75)
 info_ratio <- rep(0.35, 3)
-try <- simu_var(method = "fLS", nob = nob, k = p, lags = 1, brk = brk, 
-                sigma = as.matrix(diag(p)), signals = signals, seed=1, 
-                rank = rank, singular_vals = singular_vals, info_ratio = info_ratio, 
+try <- simu_var(method = "fLS", nob = nob, k = p, lags = 1, brk = brk,
+                sigma = as.matrix(diag(p)), signals = signals, seed=1,
+                rank = rank, singular_vals = singular_vals, info_ratio = info_ratio,
                 sp_pattern = "off-diagonal", spectral_radius = 0.9)
 data <- try$series
 data <- as.matrix(data)

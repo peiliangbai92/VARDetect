@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions_BSS_SGL.R
 \name{summary.VARDetect.result}
 \alias{summary.VARDetect.result}
-\title{Funciton to summarize the change points estimated by VARDetect}
+\title{Function to summarize the change points estimated by VARDetect}
 \usage{
 \method{summary}{VARDetect.result}(object, threshold = 0.1, ...)
 }

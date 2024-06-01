@@ -1,0 +1,129 @@
+[
+    {
+        "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+        "file_last_write": 1621611465.0,
+        "definitions": [
+            {
+                "usr": "c:@F@soft_full#I#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "soft_full(int, double)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 13,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@var_break_fit_block_cpp#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#d#d#I#I#d#S0_#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S1_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "var_break_fit_block_cpp(Rcpp::NumericMatrix, double, double, int, int, double, Rcpp::NumericMatrix, Rcpp::NumericVector, Rcpp::NumericVector)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 31,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@var_break_fit_block_group_cpp#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#d#d#I#I#d#S0_#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S1_#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "var_break_fit_block_group_cpp(Rcpp::NumericMatrix, double, double, int, int, double, Rcpp::NumericMatrix, Rcpp::NumericVector, Rcpp::NumericVector, Rcpp::List)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 223,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@var_break_fit_block_grouprow_cpp#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#d#d#I#I#d#S0_#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S1_#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "var_break_fit_block_grouprow_cpp(Rcpp::NumericMatrix, double, double, int, int, double, Rcpp::NumericMatrix, Rcpp::NumericVector, Rcpp::NumericVector, Rcpp::List)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 465,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@var_break_fit_block_groupidx_cpp#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#d#d#I#I#d#S0_#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S1_#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "var_break_fit_block_groupidx_cpp(Rcpp::NumericMatrix, double, double, int, int, double, Rcpp::NumericMatrix, Rcpp::NumericVector, Rcpp::NumericVector, Rcpp::List)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 704,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@soft_cpp#I#I#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "soft_cpp(int, int, double)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 962,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@pred_cpp#I#I#I#I#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "pred_cpp(int, int, int, int, int, int)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 977,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@var_lasso_brk#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#I#I#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "var_lasso_brk(Rcpp::NumericMatrix, Rcpp::NumericVector, int, int, double)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 994,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@var_lasso_brk_group#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#I#I#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "var_lasso_brk_group(Rcpp::NumericMatrix, Rcpp::NumericVector, int, int, double, Rcpp::List)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 1071,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@var_lasso_brk_group_idx#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#I#I#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "var_lasso_brk_group_idx(Rcpp::NumericMatrix, Rcpp::NumericVector, int, int, double, Rcpp::List)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 1164,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@lambda_warm_up#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#I#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S1_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "lambda_warm_up(Rcpp::NumericMatrix, int, Rcpp::NumericVector, Rcpp::NumericVector)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 1272,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@local_refine#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#I#$@N@Rcpp@S@Vector>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S1_#I#I#S0_#S0_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "local_refine(Rcpp::NumericMatrix, int, Rcpp::NumericVector, Rcpp::NumericVector, int, int, Rcpp::NumericMatrix, Rcpp::NumericMatrix)",
+                "file": "C:/Users/baipl/OneDrive/Documents/Work/VARDetect/src/Functions_BSS_SGL.cpp",
+                "line": 1350,
+                "column": 6,
+                "hidden": false
+            }
+        ],
+        "hidden": false
+    }
+]

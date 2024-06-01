@@ -37,33 +37,34 @@ NULL
 #' @importFrom igraph get.adjacency
 #' @import pracma
 #' @export
-#' @examples 
+#' @examples
 #' nob <- (10^3 * 4) # number of time points
 #' p <- 15 # number of time series components
-#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1) # true break points with nob+1 as the last element
+#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
 #' m0 <- length(brk) - 1 # number of break points
 #' q.t <- 2 # the true AR order
 #' m <- m0 + 1 # number of segments
 #' sp_density <- rep(0.05, m * q.t) # sparsity level (5%)
-#' try <- simu_var("sparse", nob = nob, k = p, lags = q.t, brk = brk, sp_pattern = "random", sp_density = sp_density)
+#' try <- simu_var("sparse", nob = nob, k = p, lags = q.t, brk = brk,
+#'                 sp_pattern = "random", sp_density = sp_density)
 #' print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
-#' 
-simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 300, k = 20, 
-                     lags = 1, lags_vector = NULL, brk, sigma = NULL, skip = 50, 
-                     spectral_radius = 0.98, seed = 1000, sp_density = NULL,
-                     group_mats = NULL, group_index = NULL, group_type = c("columnwise", "rowwise"), 
-                     sparse_mats = NULL, sp_pattern = c("off-diagonal", "diagonal", "random"),  
+#'
+simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 300, k = 20,
+                     lags = 1, lags_vector = NULL, brk, sigma = NULL, skip = 50,
+                     spectral_radius = 0.98, seed = NULL, sp_density = NULL,
+                     group_mats = NULL, group_index = NULL, group_type = c("columnwise", "rowwise"),
+                     sparse_mats = NULL, sp_pattern = c("off-diagonal", "diagonal", "random"),
                      rank = NULL, info_ratio = NULL, signals = NULL, singular_vals = NULL ){
     method <- match.arg(method)
     group_type <- match.arg(group_type)
     sp_pattern <- match.arg(sp_pattern)
     if(!is.null(seed)){
         set.seed(seed)
-    } 
+    }
     if(length(lags) == 1){
         arlags=seq(1, lags, 1)
     }
-  
+
     ### Error conditions
     m <- length(brk)
     nar <- length(arlags)
@@ -74,17 +75,17 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             sp_density <- rep(0.05, m * nar)
         }
     }
-  
+
     if(!is.null(lags_vector)){
         if(length(lags_vector) != m){
             stop("the length of lags_vecotr should be m.")
         }
         arlags_vector <- vector('list', m)
         for(i in 1:m){
-            arlags_vector[[i]] <- seq(1, lags_vector[i], 1)  
+            arlags_vector[[i]] <- seq(1, lags_vector[i], 1)
         }
     }
-  
+
     if (!(method %in% c("sparse", "group sparse", "fLS", "LS"))){
         stop("the method should be sparse or lowrank plus sparse or grouped.")
     }
@@ -120,8 +121,8 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
     if (!is.matrix(sigma)){
         sigma <- as.matrix(sigma)
     }
-  
-  
+
+
     ###### Pure sparse structure for model parameter ######
     phi_mats <- vector('list', m)
     if(method == 'sparse'){
@@ -133,7 +134,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
         }else{
             sp_pattern = "custom"
         }
-    
+
         if(is.null(lags_vector)){
             if(sp_pattern == "diagonal"){
                 for (j in 1:m){
@@ -174,8 +175,8 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                     stop("the length of transition matrix doesn't match!")
                 }
             }
-        
-            # examine if each segment is stationary, we force the spectral radius to be 0.9. 
+
+            # examine if each segment is stationary, we force the spectral radius to be 0.9.
             max_eigen <- rep(0, m)
             phi <- NULL
             for(j in 1:m){
@@ -189,7 +190,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                     }
                     max_eigen[j] <- max(abs(eigen(temp_mat)$values))
                 }
-            
+
                 # if the current segment is not stable, we re-scale the spectral radius
                 if(max_eigen[j] >= 1){
                     phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
@@ -209,7 +210,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                         }
                         max_eigen[j] <- max(abs(eigen(temp_mat)$values))
                     }
-                
+
                     # if the current segment is not stable, we re-scale the spectral radius
                     if(max_eigen[j] >= 1){
                         phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
@@ -220,7 +221,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                     }
                 }
                 phi <- cbind(phi, phi_mats[[j]])
-            }      
+            }
         }else{
             if(sp_pattern == "diagonal"){
                 nar_max <- max(lags_vector)
@@ -260,7 +261,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                         sparse_mats[[j]] <-  matrix(0, k, k * nar_max)
                         for(i in 1:nar){
                             for(r in 1:(k-1)){
-                                sparse_mats[[j]][r, (i-1) * k + r + 1] <- signals[sum(lags_vector[1:(j-1)]) + i] 
+                                sparse_mats[[j]][r, (i-1) * k + r + 1] <- signals[sum(lags_vector[1:(j-1)]) + i]
                             }
                         }
                     }
@@ -302,8 +303,8 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                     stop("the length of transition matrix doesn't match!")
                 }
             }
-        
-            # examine if each segment is stationary, we force the spectral radius to be 0.9. 
+
+            # examine if each segment is stationary, we force the spectral radius to be 0.9.
             max_eigen <- rep(0, m)
             phi <- NULL
             for(j in 1:m){
@@ -317,7 +318,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                     }
                     max_eigen[j] <- max(abs(eigen(temp_mat)$values))
                 }
-            
+
                 # if the current segment is not stable, we re-scale the spectral radius
                 if (max_eigen[j] >= 1){
                     phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
@@ -325,7 +326,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                 }else{
                     phi_mats[[j]] <- sparse_mats[[j]]
                 }
-            
+
                 flag = TRUE
                 while(flag){
                     if(nar == 1){
@@ -338,7 +339,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                         }
                         max_eigen[j] <- max(abs(eigen(temp_mat)$values))
                     }
-                
+
                     # if the current segment is not stable, we rescale the spectral radius
                     if(max_eigen[j] >= 1){
                         phi_mats[[j]] <- sparse_mats[[j]] * spectral_radius / max_eigen[j]
@@ -349,10 +350,10 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                     }
                 }
                 phi <- cbind(phi, phi_mats[[j]])
-            }      
+            }
         }
     }
-  
+
     ###### Group sparse structure for model parameter ######
     if(method == "group sparse"){
         if(!(group_type %in% c("columnwise", "rowwise"))){
@@ -376,34 +377,34 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                     group_index[[2:num_group]] <- setdiff(1:k, group_index[[1]])
                 }
             }
-      
+
             if(group_type == "columnwise"){
                 for(j in 1:m){
                     group_mats[[j]] <- zeros(k, k * nar)
                     for(i in 1:(num_group-1)){
                         for(g in group_index[[i]]){
-                            group_mats[[j]][, g] <- signals[(j-1) * nar + floor((g - 1) / k) + 1] 
-                        } 
+                            group_mats[[j]][, g] <- signals[(j-1) * nar + floor((g - 1) / k) + 1]
+                        }
                     }
                 }
             }
-      
+
             if(group_type == "rowwise"){
                 for(j in 1:m){
                     group_mats[[j]] <- zeros(k, k * nar)
                     for(i in 1:(num_group-1)){
                         for(g in group_index[[i]]){
-                            group_mats[[j]][g %% k, ((i-1) * k + 1):(i * k)] <- signals[(j-1) * nar + floor((g-1) / k) + 1] 
+                            group_mats[[j]][g %% k, ((i-1) * k + 1):(i * k)] <- signals[(j-1) * nar + floor((g-1) / k) + 1]
                             if(g %% k ==0){
-                                group_mats[[j]][k, ((i-1) * k + 1):(i * k)] <- signals[(j-1) * nar + floor((g-1) / k) + 1] 
+                                group_mats[[j]][k, ((i-1) * k + 1):(i * k)] <- signals[(j-1) * nar + floor((g-1) / k) + 1]
                             }
                         }
                     }
                 }
             }
         }
-    
-        # examine if each segment is stationary, we force the spectral radius to be 0.9. 
+
+        # examine if each segment is stationary, we force the spectral radius to be 0.9.
         max_eigen <- rep(0, m)
         phi <- NULL
         for(j in 1:m){
@@ -417,7 +418,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                 }
                 max_eigen[j] <- max(abs(eigen(temp_mat)$values))
             }
-        
+
             # if the current segment is not stable, we rescale the spectral radius
             if (max_eigen[j] >= 1){
                 phi_mats[[j]] <- group_mats[[j]] * spectral_radius / max_eigen[j]
@@ -425,7 +426,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             }else{
                 phi_mats[[j]] <- group_mats[[j]]
             }
-      
+
             flag = TRUE
             while(flag){
                 if(nar == 1){
@@ -438,7 +439,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                     }
                     max_eigen[j] <- max(abs(eigen(temp_mat)$values))
                 }
-          
+
                 # if the current segment is not stable, we rescale the spectral radius
                 if(max_eigen[j] >= 1){
                     phi_mats[[j]] <- group_mats[[j]] * spectral_radius / max_eigen[j]
@@ -451,7 +452,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             phi <- cbind(phi, phi_mats[[j]])
         }
     }
-  
+
     ###### Fixed low rank plus sparse structure model parameter ######
     if(method == "fLS") {
         if(length(rank[!duplicated(rank)]) > 1){
@@ -463,12 +464,12 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
         if(lags > 1){
             stop("the lags should be 1 for low rank plus sparse structure!")
         }
-      
+
         # generate sparse components
         if(!(sp_pattern %in% c("diagonal", "off-diagonal", "random"))){
             stop("the sparsity pattern should be determined correctly!")
         }
-     
+
         if(is.null(sparse_mats)){
             sparse_mats <- vector('list', m)
         }else{
@@ -482,7 +483,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                 }
             }
         }
-      
+
         if(sp_pattern == 'off-diagonal'){
             for (j in 1:m){
                 sparse_mats[[j]] <- matrix(0, k, k * nar)
@@ -493,7 +494,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                 }
             }
         }
-      
+
         if(sp_pattern == 'random'){
             if(length(sp_density) != nar*m){
                 stop("the length of sparsity density doesn't match! should equal number of segment*number of lags.")
@@ -507,7 +508,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                 }
             }
         }
-      
+
         # generate low rank component
         lowrank_mats <- vector('list', m)
         if(length(singular_vals) != max(rank)) {
@@ -521,13 +522,13 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             }
             lowrank_mats[[j]] <- (abs(signals[j]) * info_ratio[j] / max(lowrank_mats[[j]])) * lowrank_mats[[j]]
         }
-      
+
         # combine sparse and low rank components together
         for(j in 1:m){
             phi_mats[[j]] <- sparse_mats[[j]] + lowrank_mats[[j]]
         }
-      
-        # examine if each segment is stationary, we force the spectral radius to be pre-determined input. 
+
+        # examine if each segment is stationary, we force the spectral radius to be pre-determined input.
         max_eigen <- rep(0, m)
         phi <- NULL
         for(j in 1:m){
@@ -540,29 +541,29 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             phi <- cbind(phi, phi_mats[[j]])
         }
     }
-  
-  
+
+
     ###### Low rank plus sparse structure model parameter ######
     if(method == "LS"){
         if(length(rank) != m){
             stop("the length of ranks doesn't match!")
         }
-    
+
         if(lags > 1){
             stop("the lags should be 1 for Low rank plus sparse structure!")
         }
-    
+
         # generate sparse components
         if(!(sp_pattern %in% c("diagonal", "off-diagonal", "random"))){
             stop("the sparsity pattern should be determined correctly!")
         }
-    
+
         if(is.null(sparse_mats)){
             sparse_mats <- vector('list', m)
         }else{
             sp_pattern = "custom"
         }
-      
+
         if(sp_pattern == "diagonal"){
             for(j in 1:m){
                 sparse_mats[[j]] <-  matrix(0, k, k*nar)
@@ -571,7 +572,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                 }
             }
         }
-    
+
         if(sp_pattern == 'off-diagonal'){
             for(j in 1:m){
                 sparse_mats[[j]] <- matrix(0, k, k*nar)
@@ -582,7 +583,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                 }
             }
         }
-    
+
         if(sp_pattern == 'random'){
             if(length(sp_density) != nar * m){
                 stop("the length of sparsity density doesn't match! should equal number of segment*number of lags.")
@@ -596,7 +597,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
                 }
             }
         }
-    
+
         # generate low rank components
         lowrank_mats <- vector('list', m)
         if(length(singular_vals) != max(rank)) {
@@ -610,13 +611,13 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             }
             lowrank_mats[[j]] <- (signals[j] * info_ratio[j] / max(lowrank_mats[[j]])) * lowrank_mats[[j]]
         }
-    
+
         # combine sparse and low rank components together
         for(j in 1:m){
             phi_mats[[j]] <- sparse_mats[[j]] + lowrank_mats[[j]]
         }
-    
-        # examine if each segment is stationary, we force the spectral radius to be 0.9. 
+
+        # examine if each segment is stationary, we force the spectral radius to be 0.9.
         max_eigen <- rep(0, m)
         phi <- NULL
         for(j in 1:m){
@@ -629,7 +630,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             phi <- cbind(phi, phi_mats[[j]])
         }
     }
-  
+
     ### generate time series with respect to the transition matrices
     n <- nob + skip
     at <- rmvnorm(n, rep(0, k), sigma)
@@ -641,7 +642,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
     }
     ist <- p+1
     zt <- matrix(0, n, k)
-  
+
     # case 1: there is only one single change point
     if(m == 1){
         for(it in ist:n){
@@ -657,7 +658,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             zt[it, ] = tmp
         }
     }
-  
+
     # case 2: there are multiple change points
     if(m > 1){
         for(it in ist:(skip + brk[1] - 1)){
@@ -687,7 +688,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
             }
         }
     }
-  
+
     # return the list
     zt <- zt[(1 + skip):n, ]
     at <- at[(1 + skip):n, ]
@@ -698,7 +699,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
         simulated_var <- list(series = zt, noises = at, model_param = group_mats)
     }
     if(method == "fLS"){
-        simulated_var <- list(series = zt, noises = at, model_param = phi_mats, 
+        simulated_var <- list(series = zt, noises = at, model_param = phi_mats,
                               sparse_param = sparse_mats, lowrank_param = lowrank_mats)
     }
     if(method == "LS"){
@@ -710,12 +711,12 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
 
 
 
-#' block segmentation scheme (BSS).
-#' 
-#' @description Perform the block segmentation scheme (BSS) algorithm to detect the structural breaks 
+#' Block segmentation scheme (BSS).
+#'
+#' @description Perform the block segmentation scheme (BSS) algorithm to detect the structural breaks
 #' in large scale high-dimensional non-stationary VAR models.
-#' 
-#' @param data input data matrix, with each column representing the time series component 
+#'
+#' @param data input data matrix, with each column representing the time series component
 #' @param method method: sparse, group sparse, and fixed low rank plus sparse. Default is sparse
 #' @param group.case group sparse pattern: column, row.
 #' @param group.index group index for group sparse case
@@ -724,7 +725,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
 #' @param mu tuning parameter for low rank component, only available when method is set to "fLS"
 #' @param q the AR order
 #' @param max.iteration max number of iteration for the fused lasso
-#' @param tol tolerance for the fused lasso 
+#' @param tol tolerance for the fused lasso
 #' @param block.size the block size
 #' @param blocks the blocks
 #' @param refit logical; if TRUE, refit the VAR model for parameter estimation. Default is FALSE.
@@ -745,7 +746,7 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
 #' @importFrom Rcpp sourceCpp
 #' @importFrom stats ar
 #' @importFrom sparsevar fitVAR
-#' @examples 
+#' @examples
 #' #### sparse VAR model
 #' nob <- (10^3) # number of time points
 #' p <- 15; # number of time series components
@@ -762,8 +763,8 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
 #' summary(fit)
 #' plot(fit, data, display = "cp")
 #' plot(fit, data, display = "param")
-#' 
-#' 
+#'
+#'
 #' ###### Example for fixed low rank plus sparse structure VAR model
 #' nob <- 300
 #' p <- 15
@@ -774,9 +775,9 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
 #' rank <- c(2, 2, 2)
 #' singular_vals <- c(1, 0.75)
 #' info_ratio <- rep(0.35, 3)
-#' try <- simu_var(method = "fLS", nob = nob, k = p, lags = 1, brk = brk, 
-#'                 sigma = as.matrix(diag(p)), signals = signals, seed=1, 
-#'                 rank = rank, singular_vals = singular_vals, info_ratio = info_ratio, 
+#' try <- simu_var(method = "fLS", nob = nob, k = p, lags = 1, brk = brk,
+#'                 sigma = as.matrix(diag(p)), signals = signals, seed=1,
+#'                 rank = rank, singular_vals = singular_vals, info_ratio = info_ratio,
 #'                 sp_pattern = "off-diagonal", spectral_radius = 0.9)
 #' data <- try$series
 #' data <- as.matrix(data)
@@ -785,12 +786,12 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
 #' summary(fit)
 #' plot(fit, data, display = "cp")
 #' plot(fit, data, display = "param")
-tbss <- function(data, method = c("sparse", "group sparse", "fLS"), 
-                 group.case = c("columnwise", "rowwise"), group.index = NULL, 
-                 lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL, q = 1, 
-                 max.iteration = 50, tol = 10^(-2), block.size = NULL, blocks = NULL, 
+tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
+                 group.case = c("columnwise", "rowwise"), group.index = NULL,
+                 lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL, q = 1,
+                 max.iteration = 50, tol = 10^(-2), block.size = NULL, blocks = NULL,
                  refit = FALSE, use.BIC = TRUE, an.grid = NULL, verbose = FALSE){
-    
+
     # Sanity check for arguments
     method <- match.arg(method)
     group.case <- match.arg(group.case)
@@ -798,7 +799,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
     p <- length(data[1,])
     second.brk.points <- c()
     pts.final <- c()
-  
+
     ############# block size and blocks ###########
     if(is.null(block.size) && is.null(blocks)){
         block.size = floor(sqrt(nob))
@@ -813,19 +814,19 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
             stop("The block.size and blocks can't match!")
         }
     }
-  
+
     if(blocks[length(blocks)] < nob){
         blocks <- c(blocks[-length(blocks)], nob)
     }
-  
+
     n.new <- length(blocks) - 1
     blocks.size <- sapply(c(1:n.new), function(jjj) blocks[jjj+1] - blocks[jjj])
-  
+
     # sample the cv index for cross-validation
     bbb <- floor(n.new / 5)
     aaa <- 4
     cv.index <- seq(aaa, n.new, floor(n.new / bbb))
-  
+
     ############# Tuning parameter ################
     if(is.null(lambda.1.cv)){
         lambda.1.max <- lambda_warm_up(data, q, blocks, cv.index)$lambda_1_max
@@ -834,20 +835,20 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
         }else{
             epsilon <- 10^(-4)
         }
-        nlam <- 10 
+        nlam <- 10
         lambda.1.min <-  lambda.1.max * epsilon
         delata.lam <- (log(lambda.1.max) - log(lambda.1.min)) / (nlam - 1)
         lambda.1.cv <-  sapply(1:(nlam), function(jjj) lambda.1.min * exp(delata.lam * (nlam - jjj)))
     }
- 
+
     if(is.null(lambda.2.cv)){
         lambda.2.cv <- c(10 * sqrt(log(p) / nob), sqrt(log(p) / nob), 0.1 * sqrt(log(p) / nob))
         if(method == "group sparse"){
             lambda.2.cv <- sqrt(p) * c(10 * sqrt(log(p) / nob), sqrt(log(p) / nob), 0.1 * sqrt(log(p) / nob))
         }
     }
-  
-  
+
+
     ######## group index #######
     if(is.null(group.index)){
         if(group.case == "columnwise"){
@@ -872,34 +873,34 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
             group.index[[length(group.index) + 1]] <- index.diff
         }
     }
-  
+
     ######################################################################
     ######## First Step: Initial Break Points Selection ##################
     ######################################################################
     time.comparison <- rep(0, 3)
-    
+
     # run the first step
     ptm.temp <- proc.time()
     if(method == "sparse"){
-        # run the first block fused lasso step 
+        # run the first block fused lasso step
         temp.first <- first.step.blocks(data, lambda.1.cv, lambda.2.cv, q, max.iteration = max.iteration, tol = tol, cv.index, blocks=blocks)
     }
     if(method == "group sparse"){
-        # run the first block fused lasso step 
-        temp.first <- first.step.blocks.group(data, lambda.1.cv, lambda.2.cv, q, max.iteration = max.iteration, tol = tol, 
+        # run the first block fused lasso step
+        temp.first <- first.step.blocks.group(data, lambda.1.cv, lambda.2.cv, q, max.iteration = max.iteration, tol = tol,
                                               cv.index, blocks = blocks,  group.case = group.case, group.index = group.index)
     }
     if(method == "fLS"){
         n <- dim(data)[1]
         p <- dim(data)[2]
-      
+
         # estimate low-rank components
         X <- data[1:(n-1), ]
         Y <- data[2:n, ]
-        fit_lr <- fista.nuclear(X, Y, mu, p, niter = max.iteration, 
+        fit_lr <- fista.nuclear(X, Y, mu, p, niter = max.iteration,
                                 backtracking = TRUE, diag(p))
         L_est <- t(fit_lr$phi.hat)
-      
+
         # remove low-rank effects from the data
         data_remove <- matrix(0, n, p)
         data_remove[1,] <- data[1,]
@@ -911,32 +912,32 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
             tmp <- ytm - xtm %*% t(L_est)
             data_remove[i+1,] <- tmp
         }
-      
+
         # first step for fixed low rank plus sparse
-        temp.first <- first.step.blocks(data_remove, lambda.1.cv, lambda.2.cv, q, 
+        temp.first <- first.step.blocks(data_remove, lambda.1.cv, lambda.2.cv, q,
                                         max.iteration = max.iteration, tol = tol, cv.index, blocks = blocks)
     }
-  
+
     time.temp <- proc.time() - ptm.temp
     time.comparison[1] <- c(time.temp[3])
-  
+
     first.brk.points <- temp.first$brk.points
     phi.est.full <- temp.first$phi.full
-    
+
     if(verbose == TRUE){
         cat("first.brk.points: \n")
         cat(first.brk.points)
         cat("\n")
-        
+
         cat("Selected lambda1: \n")
         cat(temp.first$cv1.final)
         cat("\n")
-        
+
         cat("Selected lambda2: \n")
         cat(temp.first$cv2.final)
         cat("\n")
     }
-  
+
     if(method == "group sparse"){
         if(length(first.brk.points) > 0){
             # construct the grid values of neighborhood size a_n
@@ -986,42 +987,42 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                     eta <- (log(2 * an) * log(p)) / (2 * an) # the tuning parameter for second and third steps.
                     # run the second local screening step
                     ptm.temp <- proc.time()
-                    temp <- second.step.local(method=method, data, eta = eta, q, max.iteration = 1000, tol = tol, first.brk.points, 
+                    temp <- second.step.local(method=method, data, eta = eta, q, max.iteration = 1000, tol = tol, first.brk.points,
                                               an, phi.est.full = phi.est.full, blocks, use.BIC, group.case = group.case, group.index = group.index)
-                    
+
                     time.temp <- proc.time() - ptm.temp
                     time.comparison[2] <- time.comparison[2] + c(time.temp[3])
-    
+
                     second.brk.points <- temp$pts
                     if(verbose == TRUE){
                         cat("Second step selected break points: \n")
                         cat(second.brk.points)
                         cat("\n")
                     }
-    
+
                     ######################################################
                     ######## Thrid Step: Exhaustive Search      ##########
                     ######################################################
                     pts.final <- second.brk.points
                     phi.local.1.full <- temp$phi.local.1
                     phi.local.2.full <- temp$phi.local.2
-    
+
                     if(length(pts.final) == 0){
                         idx <- floor(n.new / 2)
                         phi.hat.list <- phi.est.full[[idx]]
                     }
-    
+
                     ptm.temp <- proc.time()
                     if(min(abs(diff(pts.final)), 3 * an) > 2 * an){
                         if(length(pts.final) != 0){
                             pts.list <- block.finder(pts.final, 2 * an)
-                            local.idx = sapply(1:length(pts.list), 
+                            local.idx = sapply(1:length(pts.list),
                                                function(jjj) which.min(abs(pts.list[[jjj]][1] - first.brk.points)))
-    
-                            temp.third <- third.step.exhaustive.search(data, q, max.iteration = 1000, tol = tol, pts.list, 
-                                                                       an, phi.est.full= phi.est.full, 
-                                                                       phi.local.1 = phi.local.1.full[local.idx], 
-                                                                       phi.local.2 = phi.local.2.full[local.idx], 
+
+                            temp.third <- third.step.exhaustive.search(data, q, max.iteration = 1000, tol = tol, pts.list,
+                                                                       an, phi.est.full= phi.est.full,
+                                                                       phi.local.1 = phi.local.1.full[local.idx],
+                                                                       phi.local.2 = phi.local.2.full[local.idx],
                                                                        blocks)
                             phi.hat.list <- temp.third$phi.hat.list
                             pts.final <- temp.third$pts
@@ -1032,12 +1033,12 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                             if(length(pts.final) != 0){
                                 # cluster the selected break points by size 2a_n
                                 pts.list <- block.finder(pts.final, 2 * an)
-                                local.idx = sapply(1:length(pts.list), 
+                                local.idx = sapply(1:length(pts.list),
                                                    function(jjj) which.min(abs(pts.list[[jjj]][1] - first.brk.points)))
-                                temp.third<- third.step.exhaustive.search(data, q, max.iteration = 1000, tol = tol, pts.list, 
-                                                                          an, phi.est.full= phi.est.full, 
-                                                                          phi.local.1 = phi.local.1.full[local.idx], 
-                                                                          phi.local.2 = phi.local.2.full[local.idx], 
+                                temp.third<- third.step.exhaustive.search(data, q, max.iteration = 1000, tol = tol, pts.list,
+                                                                          an, phi.est.full= phi.est.full,
+                                                                          phi.local.1 = phi.local.1.full[local.idx],
+                                                                          phi.local.2 = phi.local.2.full[local.idx],
                                                                           blocks)
                                 phi.hat.list <- temp.third$phi.hat.list
                                 pts.final <- temp.third$pts
@@ -1046,11 +1047,11 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                     }
                     time.temp <- proc.time() - ptm.temp;
                     time.comparison[3] <- time.comparison[3] + c(time.temp[3])
-                    
+
                     # record the final selected break points for each given a_n
                     final.pts.res[[an.idx]] <- pts.final
                     final.phi.hat.list.res[[an.idx]] <- phi.hat.list
-    
+
                     # terminate the grid search of an if the number of final selected break points is stable
                     if(an.idx > 2){
                         if(length(final.pts.res[[an.idx]]) == length(final.pts.res[[an.idx-1]]) && length(final.pts.res[[an.idx-1]]) == length(final.pts.res[[an.idx-2]])){
@@ -1111,39 +1112,39 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                     }
                 }
                 phi.hat.list <- temp
-                final.result <- structure(list(data = data, 
-                                               q = q, 
-                                               cp = cp.final, 
-                                               sparse_mats = phi.hat.list, 
-                                               lowrank_mats = NULL, 
-                                               est_phi = phi.hat.list, 
+                final.result <- structure(list(data = data,
+                                               q = q,
+                                               cp = cp.final,
+                                               sparse_mats = phi.hat.list,
+                                               lowrank_mats = NULL,
+                                               est_phi = phi.hat.list,
                                                time = time.comparison), class = "VARDetect.result")
                 return(final.result)
             }else{
                 cat("No refit for the parameter estimation")
-                final.result <- structure(list(data = data, 
-                                               q = q, 
-                                               cp = final.pts.res[[an.idx.final]], 
-                                               sparse_mats = final.phi.hat.list.res[[an.idx.final]], 
-                                               lowrank_mats = NULL, 
-                                               est_phi = final.phi.hat.list.res[[an.idx.final]], 
-                                               time = time.comparison), 
+                final.result <- structure(list(data = data,
+                                               q = q,
+                                               cp = final.pts.res[[an.idx.final]],
+                                               sparse_mats = final.phi.hat.list.res[[an.idx.final]],
+                                               lowrank_mats = NULL,
+                                               est_phi = final.phi.hat.list.res[[an.idx.final]],
+                                               time = time.comparison),
                                           class = "VARDetect.result")
                 return(final.result)
             }
         }else{
-            final.result <- structure(list(data = data, 
-                                           q = q, 
-                                           cp = first.brk.points, 
-                                           sparse_mats = NULL, 
-                                           lowrank_mats = NULL, 
-                                           est_phi = NULL, 
-                                           time = NULL), 
+            final.result <- structure(list(data = data,
+                                           q = q,
+                                           cp = first.brk.points,
+                                           sparse_mats = NULL,
+                                           lowrank_mats = NULL,
+                                           est_phi = NULL,
+                                           time = NULL),
                                       class = "VARDetect.result")
         return(final.result)
         }
     }
-  
+
     if(method == "sparse" | method == "fLS"){
         if(length(first.brk.points) > 0){
             # construct the grid values of neighborhood size a_n
@@ -1153,22 +1154,22 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
             if(is.null(an.grid)){
                 an.grid <- seq(an.lb,  an.ub, length.out = 5)
             }
-      
+
             an.idx.final <- length(an.grid)
             an.grid <- floor(an.grid)
             final.pts.res <- vector("list", length(an.grid))
             final.phi.hat.list.res <- vector("list", length(an.grid))
-        
+
             flag <- c("FALSE")
             an.idx <- 0
             phi.local.1.full <- vector("list", length(an.grid))
             phi.local.2.full <- vector("list", length(an.grid))
-      
+
             # for each a_n, run the second and third step
             while(an.idx < length(an.grid)){
                 an.idx <- an.idx + 1
                 an <- an.grid[an.idx]
-        
+
                 # remove the boundary points
                 remove.ind <- c()
                 if(length(first.brk.points) != 0){
@@ -1184,83 +1185,83 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                 if(length(remove.ind) > 0){
                     first.brk.points <- first.brk.points[-remove.ind]
                 }
-        
+
                 # if there are selected break points after the first step
                 if(length(first.brk.points) != 0){
-          
+
                     #####################################################
                     ######## Second Step: Local Screening      ##########
                     #####################################################
                     eta <- (log(2 * an) * log(p)) / (2 * an) # the tuning parameter for second and third steps.
                     # run the second local screening step
                     ptm.temp <- proc.time()
-                    temp <- second.step.local(method = method, data, eta = eta, q, max.iteration = 1000, tol = tol, first.brk.points, an, 
+                    temp <- second.step.local(method = method, data, eta = eta, q, max.iteration = 1000, tol = tol, first.brk.points, an,
                                               phi.est.full = phi.est.full, blocks, use.BIC)
-          
+
                     time.temp <- proc.time() - ptm.temp
                     time.comparison[2] <- time.comparison[2] + c(time.temp[3])
-          
+
                     # record the selected break points after local screening step
                     second.brk.points <- temp$pts
-                    
+
                     if(verbose == TRUE){
                         cat("Second step selected break points: \n")
                         cat(second.brk.points)
                         cat("\n")
                     }
-          
+
                     ######################################################
                     ######## Third Step: Exhaustive Search      ##########
                     ######################################################
                     pts.final <- second.brk.points
                     phi.local.1.full <- temp$phi.local.1
                     phi.local.2.full <- temp$phi.local.2
-          
+
                     if(length(pts.final) == 0){
                         idx <- floor(n.new / 2)
                         phi.hat.list <- phi.est.full[[idx]]
                     }
-          
+
                     ptm.temp <- proc.time()
                     if(min(abs(diff(pts.final)), 3 * an) > 2 * an){
                         if(length(pts.final) != 0){
                             pts.list <- block.finder(pts.final, 2 * an)
-                            local.idx = sapply(1:length(pts.list), 
+                            local.idx = sapply(1:length(pts.list),
                                                function(jjj) which.min(abs(pts.list[[jjj]][1] - first.brk.points)))
-                            temp.third <- third.step.exhaustive.search(data, q, max.iteration = 1000, tol = tol, pts.list, 
-                                                                       an, phi.est.full= phi.est.full, 
-                                                                       phi.local.1 = phi.local.1.full[local.idx], 
-                                                                       phi.local.2 = phi.local.2.full[local.idx], 
+                            temp.third <- third.step.exhaustive.search(data, q, max.iteration = 1000, tol = tol, pts.list,
+                                                                       an, phi.est.full= phi.est.full,
+                                                                       phi.local.1 = phi.local.1.full[local.idx],
+                                                                       phi.local.2 = phi.local.2.full[local.idx],
                                                                        blocks)
                             phi.hat.list <- temp.third$phi.hat.list
                             pts.final <- temp.third$pts
                         }
                     }else{
-                        # keep running until none of the selected break points close to any other selected break points 
+                        # keep running until none of the selected break points close to any other selected break points
                         while(min(abs(diff(pts.final)), 3 * an) <= 2 * an){
                             if(length(pts.final) != 0){
                                 # cluster the selected break points by size 2a_n
                                 pts.list <- block.finder(pts.final, 2 * an)
-                                local.idx = sapply(1:length(pts.list), 
+                                local.idx = sapply(1:length(pts.list),
                                                    function(jjj) which.min(abs(pts.list[[jjj]][1] - first.brk.points)))
-                                temp.third<- third.step.exhaustive.search(data, q, max.iteration = 1000, tol = tol, pts.list, 
-                                                                          an, phi.est.full= phi.est.full, 
-                                                                          phi.local.1 = phi.local.1.full[local.idx], 
-                                                                          phi.local.2 = phi.local.2.full[local.idx], 
+                                temp.third<- third.step.exhaustive.search(data, q, max.iteration = 1000, tol = tol, pts.list,
+                                                                          an, phi.est.full= phi.est.full,
+                                                                          phi.local.1 = phi.local.1.full[local.idx],
+                                                                          phi.local.2 = phi.local.2.full[local.idx],
                                                                           blocks)
                                 phi.hat.list <- temp.third$phi.hat.list
                                 pts.final <- temp.third$pts
                             }
                         }
                     }
-          
+
                     time.temp <- proc.time() - ptm.temp
                     time.comparison[3] <- time.comparison[3] + c(time.temp[3])
-          
+
                     # record the final selected break points for each given a_n
                     final.pts.res[[an.idx]] <- pts.final
                     final.phi.hat.list.res[[an.idx]] <- phi.hat.list
-          
+
                     # terminate the grid search of an if the number of final selected break points is stable
                     if(an.idx > 2){
                         if(length(final.pts.res[[an.idx]]) == length(final.pts.res[[an.idx-1]]) && length(final.pts.res[[an.idx-1]]) == length(final.pts.res[[an.idx-2]])){
@@ -1272,7 +1273,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                     }
                 }
             }
-      
+
             # if the stable criterion hasn't been met
             # find the length that happen the most
             # if there are multiple lengths with same occurrence, find the longest one
@@ -1322,24 +1323,24 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                         }
                     }
                     phi.hat.list <- temp
-                    final.result <- structure(list(data = data, 
-                                                   q = q, 
-                                                   cp = cp.final, 
-                                                   sparse_mats = phi.hat.list, 
-                                                   lowrank_mats = NULL, 
-                                                   est_phi = phi.hat.list, 
-                                                   time = time.comparison), 
+                    final.result <- structure(list(data = data,
+                                                   q = q,
+                                                   cp = cp.final,
+                                                   sparse_mats = phi.hat.list,
+                                                   lowrank_mats = NULL,
+                                                   est_phi = phi.hat.list,
+                                                   time = time.comparison),
                                               class = "VARDetect.result")
                     return(final.result)
                 }else{
                     cat("No refit for the parameter estimation")
-                    final.result <- structure(list(data = data, 
-                                                   q = q, 
-                                                   cp = final.pts.res[[an.idx.final]], 
-                                                   sparse_mats = final.phi.hat.list.res[[an.idx.final]], 
-                                                   lowrank_mats = NULL, 
-                                                   est_phi = final.phi.hat.list.res[[an.idx.final]], 
-                                                   time = time.comparison), 
+                    final.result <- structure(list(data = data,
+                                                   q = q,
+                                                   cp = final.pts.res[[an.idx.final]],
+                                                   sparse_mats = final.phi.hat.list.res[[an.idx.final]],
+                                                   lowrank_mats = NULL,
+                                                   est_phi = final.phi.hat.list.res[[an.idx.final]],
+                                                   time = time.comparison),
                                               class = "VARDetect.result")
                     return(final.result)
                 }
@@ -1366,11 +1367,11 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                     for(j in 1:length(est_phi)){
                         est_phi[[j]] <- L_est + phi.hat.list[[j]]
                     }
-                    final.result <- structure(list(cp = cp.final, 
-                                                   sparse_mats = phi.hat.list, 
-                                                   lowrank_mats = list(L_est), 
-                                                   est_phi = est_phi, 
-                                                   time = time.comparison), 
+                    final.result <- structure(list(cp = cp.final,
+                                                   sparse_mats = phi.hat.list,
+                                                   lowrank_mats = list(L_est),
+                                                   est_phi = est_phi,
+                                                   time = time.comparison),
                                               class = "VARDetect.result")
                     return(final.result)
                 }else{
@@ -1379,25 +1380,25 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                         est_phi[[j]] <- L_est + final.phi.hat.list.res[[an.idx.final]][[j]]
                     }
                     cat("No refit for the parameter estimation")
-                    final.result <- structure(list(data = data, 
-                                                   q = q, 
-                                                   cp = final.pts.res[[an.idx.final]], 
-                                                   sparse_mats = final.phi.hat.list.res[[an.idx.final]], 
-                                                   lowrank_mats = list(L_est), 
-                                                   est_phi = est_phi, 
-                                                   time = time.comparison), 
+                    final.result <- structure(list(data = data,
+                                                   q = q,
+                                                   cp = final.pts.res[[an.idx.final]],
+                                                   sparse_mats = final.phi.hat.list.res[[an.idx.final]],
+                                                   lowrank_mats = list(L_est),
+                                                   est_phi = est_phi,
+                                                   time = time.comparison),
                                               class = "VARDetect.result")
                     return(final.result)
                 }
             }
         }else{
-            final.result <- structure(list(data = data, 
-                                           q = q, 
-                                           cp = first.brk.points, 
-                                           sparse_mats = NULL, 
-                                           lowrank_mats = NULL, 
-                                           est_phi = NULL, 
-                                           time = NULL), 
+            final.result <- structure(list(data = data,
+                                           q = q,
+                                           cp = first.brk.points,
+                                           sparse_mats = NULL,
+                                           lowrank_mats = NULL,
+                                           est_phi = NULL,
+                                           time = NULL),
                                       class = "VARDetect.result")
             return(final.result)
         }
@@ -1405,15 +1406,15 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
 }
 
 #' block fused lasso step (first step for BSS).
-#' 
+#'
 #' @description Perform the block fused lasso to detect candidate break points.
-#' 
-#' @param data.temp input data matrix, with each column representing the time series component 
+#'
+#' @param data.temp input data matrix, with each column representing the time series component
 #' @param lambda.1.cv tuning parameter lambda_1 for fused lasso
 #' @param lambda.2.cv tuning parameter lambda_2 for fused lasso
 #' @param q the AR order
 #' @param max.iteration max number of iteration for the fused lasso
-#' @param tol tolerance for the fused lasso 
+#' @param tol tolerance for the fused lasso
 #' @param cv.index the index of time points for cross-validation
 #' @param blocks the blocks
 #' @return A list object, which contains the followings
@@ -1424,7 +1425,7 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
 #'   \item{cv2.final}{the selected lambda_2}
 #' }
 #' @keywords internal
-#' 
+#'
 first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iteration = max.iteration, tol = tol,cv.index, blocks){
     cv.l <- length(cv.index)
     data.org <- data.temp
@@ -1432,18 +1433,18 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
     p <- length(data.temp[1,])
     n.new <- length(blocks) - 1
     blocks.size <- sapply(c(1:n.new), function(jjj) blocks[jjj+1] - blocks[jjj])
-  
+
     # create the tuning parameter combination of lambda1 and lambda2
     lambda.full <- expand.grid(lambda.1.cv, lambda.2.cv)
     kk <- length(lambda.full[,1])
-  
-    cv <- rep(NA, kk) 
+
+    cv <- rep(NA, kk)
     phi.final <- vector("list", kk)
     nob <- length(data.temp[,1])
     p <- length(data.temp[1,])
     brk.points.final <- vector("list", kk)
     flag.full <- rep(0, kk)
-  
+
     # cross-validation for each values of lambda1 and lambda2
     nlam1 <- length(lambda.1.cv)
     nlam2 <- length(lambda.2.cv)
@@ -1456,19 +1457,19 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
         }
         i.lam2 <- floor((i - 1) / nlam1) + 1
         if(i == 1){
-            test <- var_break_fit_block_cpp(data.temp, 
-                                            lambda.full[i,1], 
-                                            lambda.full[i,2], 
-                                            q, max.iteration, tol = tol, 
-                                            initial_phi = 0.0 + matrix(0.0, p, p * q * n.new), 
+            test <- var_break_fit_block_cpp(data.temp,
+                                            lambda.full[i,1],
+                                            lambda.full[i,2],
+                                            q, max.iteration, tol = tol,
+                                            initial_phi = 0.0 + matrix(0.0, p, p * q * n.new),
                                             blocks, cv.index)
             flag.full[i] <- test$flag
         }else if(is.na(cv[i-1])){
-            test <- var_break_fit_block_cpp(data.temp, 
+            test <- var_break_fit_block_cpp(data.temp,
                                             lambda.full[i,1],
-                                            lambda.full[i,2], 
-                                            q, max.iteration, tol = tol, 
-                                            initial_phi = 0.0 + matrix(0.0, p, p * q * n.new), 
+                                            lambda.full[i,2],
+                                            q, max.iteration, tol = tol,
+                                            initial_phi = 0.0 + matrix(0.0, p, p * q * n.new),
                                             blocks, cv.index)
             flag.full[i] <- test$flag
         }else{
@@ -1476,11 +1477,11 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
             if(max(abs(phi.final[[(i-1)]])) > 10^3){
                 initial.phi <- 0 * phi.final[[i-1]]
             }
-            test <- var_break_fit_block_cpp(data.temp, 
+            test <- var_break_fit_block_cpp(data.temp,
                                             lambda.full[i,1],
-                                            lambda.full[i,2], 
-                                            q, max.iteration, tol = tol, 
-                                            initial_phi = initial.phi, 
+                                            lambda.full[i,2],
+                                            q, max.iteration, tol = tol,
+                                            initial_phi = initial.phi,
                                             blocks, cv.index)
             flag.full[i] <- test$flag
         }
@@ -1488,13 +1489,13 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
         phi.final[[i]] <- phi.hat.full
         ll <- c(0)
         brk.points.list <- vector("list", length(ll))
-    
+
         for(j in 1:length(ll)){
             phi.hat <- phi.hat.full
             n <- nob - q
             m.hat <- 0
             brk.points <- rep(0, n.new)
-      
+
             for (iii in 1:(n.new - 1)){
                 if(sum((phi.hat[,((iii - 1) * p * q + 1):(iii * p * q)])^2) > tol){
                     m.hat <- m.hat + 1
@@ -1503,8 +1504,8 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
             }
             loc <- rep(0, m.hat)
             brk.points <- brk.points[1:m.hat]
-      
-            # remove the boundary points and clean up 
+
+            # remove the boundary points and clean up
             brk.points <- brk.points[which(brk.points > 3 * mean(blocks.size))]
             brk.points <- brk.points[which(brk.points < (n - 3 * mean(blocks.size)))]
             m.hat <- length(brk.points)
@@ -1526,10 +1527,10 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
             }
             brk.points.list[[j]] <- brk.points
         }
-    
+
         brk.points.final[[i]] <- brk.points
         m.hat <- length(brk.points)
-    
+
         # forecast the time series based on the estimated matrix Phi
         # and compute the forecast error
         phi.full.all <- vector("list", n.new)
@@ -1537,15 +1538,15 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
         phi.full.all[[1]] <- phi.hat[,1:(p * q)]
         for(i.1 in 2:n.new){
             phi.full.all[[i.1]] <- phi.full.all[[i.1-1]] + phi.hat[,((i.1 - 1) * p * q + 1):(i.1 * p * q)]
-            forecast[,(blocks[i.1] + 1):(blocks[i.1 + 1])] <- pred.block(t(data.org), 
-                                                                         phi.full.all[[i.1-1]], 
-                                                                         q, blocks[i.1], p, 
+            forecast[,(blocks[i.1] + 1):(blocks[i.1 + 1])] <- pred.block(t(data.org),
+                                                                         phi.full.all[[i.1-1]],
+                                                                         q, blocks[i.1], p,
                                                                          blocks[i.1+1] - blocks[i.1])
         }
         forecast.new <- matrix(0, p, cv.l)
         for(j in 1:cv.l){
-            forecast.new[,j] <- pred(t(data.org), 
-                                     phi.full.all[[(cv.index[j])]], 
+            forecast.new[,j] <- pred(t(data.org),
+                                     phi.full.all[[(cv.index[j])]],
                                      q, blocks[cv.index[j]+1] - 1, p, 1)
         }
         temp.index <- rep(0, cv.l)
@@ -1553,8 +1554,8 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
             temp.index[ff] <- blocks[cv.index[ff] + 1]
         }
         cv[i] <- (1 / (p * cv.l)) * sum((forecast.new - t(data.org[temp.index,]))^2)
-    
-        # break condition 
+
+        # break condition
         if(nlam1 >= 2){
             if(!(i %in% c(seq(1, kk, nlam1), seq(2, kk, nlam1))) && cv[i] > cv[i-1]){
                 i.lam2 <- i.lam2 + 1
@@ -1566,34 +1567,34 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
             i <- i + 1
         }
     }
-  
+
     # select the tuning parmaete that has the small cross-validation value
     lll <- min(which(cv == min(cv, na.rm = TRUE)))
     phi.hat.full <- phi.final[[lll]]
-  
+
     # compute the estimated phi
     phi.par.sum <- vector("list", n.new)
     phi.par.sum[[1]] <- phi.hat.full[, 1:(p * q)]
     for(i in 2:n.new){
         phi.par.sum[[i]] <- phi.par.sum[[i-1]] + phi.hat.full[,((i - 1) * p * q + 1):(i * p * q)]
     }
-  
-    return(list(brk.points = brk.points.final[[lll]], cv = cv, 
+
+    return(list(brk.points = brk.points.final[[lll]], cv = cv,
                 cv1.final = lambda.full[lll,1], cv2.final = lambda.full[lll,2],
                 phi.full = phi.par.sum))
 }
 
 
 #' block fused sparse group lasso step (first step).
-#' 
+#'
 #' @description Perform the block fused lasso to detect candidate break points.
-#' 
-#' @param data.temp input data matrix, with each column representing the time series component 
+#'
+#' @param data.temp input data matrix, with each column representing the time series component
 #' @param lambda.1.cv tuning parmaeter lambda_1 for fused lasso
 #' @param lambda.2.cv tuning parmaeter lambda_2 for fused lasso
 #' @param q the AR order
 #' @param max.iteration max number of iteration for the fused lasso
-#' @param tol tolerance for the fused lasso 
+#' @param tol tolerance for the fused lasso
 #' @param cv.index the index of time points for cross-validation
 #' @param blocks the blocks
 #' @param group.case group sparse pattern: column, row.
@@ -1606,30 +1607,30 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
 #'   \item{cv2.final}{the selected lambda_2}
 #' }
 #' @keywords internal
-#' 
-first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q, 
+#'
+first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q,
                                     max.iteration = max.iteration, tol = tol,
-                                    cv.index, blocks, 
+                                    cv.index, blocks,
                                     group.case = "columnwise", group.index){
-  
+
     cv.l <- length(cv.index)
     data.org <- data.temp
     nob.org <- length(data.temp[,1])
     p <- length(data.temp[1,])
     n.new <- length(blocks) - 1
     blocks.size <- sapply(c(1:n.new), function(jjj) blocks[jjj+1] - blocks[jjj])
-  
+
     # create the tuning parameter combination of lambda1 and lambda2
     lambda.full <- expand.grid(lambda.1.cv, lambda.2.cv)
     kk <- length(lambda.full[,1])
-    
-    cv <- rep(NA, kk) 
+
+    cv <- rep(NA, kk)
     phi.final <- vector("list", kk)
     nob <- length(data.temp[,1])
     p <- length(data.temp[1,])
     brk.points.final <- vector("list", kk)
     flag.full <- rep(0, kk)
-    
+
     # cross-validation for each values of lambda1 and lambda2
     nlam1 <- length(lambda.1.cv)
     nlam2 <- length(lambda.2.cv)
@@ -1643,19 +1644,19 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q,
         i.lam2 <- floor((i - 1) / nlam1) + 1
         if(group.case == "columnwise"){
             if(i == 1){
-                test <- var_break_fit_block_group_cpp(data.temp, 
-                                                      lambda.full[i,1], 
-                                                      lambda.full[i,2], 
-                                                      q, max.iteration, tol = tol, 
-                                                      initial_phi = 0.0 + matrix(0.0, p, p * q * n.new), 
+                test <- var_break_fit_block_group_cpp(data.temp,
+                                                      lambda.full[i,1],
+                                                      lambda.full[i,2],
+                                                      q, max.iteration, tol = tol,
+                                                      initial_phi = 0.0 + matrix(0.0, p, p * q * n.new),
                                                       blocks, cv.index, group.index)
             flag.full[i] <- test$flag
             }else if(is.na(cv[i-1])){
-                test <- var_break_fit_block_group_cpp(data.temp, 
+                test <- var_break_fit_block_group_cpp(data.temp,
                                                       lambda.full[i,1],
-                                                      lambda.full[i,2], 
-                                                      q, max.iteration, tol = tol, 
-                                                      initial_phi = 0.0 + matrix(0.0, p, p * q * n.new), 
+                                                      lambda.full[i,2],
+                                                      q, max.iteration, tol = tol,
+                                                      initial_phi = 0.0 + matrix(0.0, p, p * q * n.new),
                                                       blocks, cv.index, group.index)
                 flag.full[i] <- test$flag
             }else{
@@ -1663,15 +1664,15 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q,
                 if(max(abs(phi.final[[i-1]])) > 10^3){
                     initial.phi <- 0 * phi.final[[i-1]]
                 }
-                test <- var_break_fit_block_group_cpp(data.temp, 
+                test <- var_break_fit_block_group_cpp(data.temp,
                                                       lambda.full[i,1],
-                                                      lambda.full[i,2], 
-                                                      q, max.iteration, tol = tol, 
-                                                      initial_phi = initial.phi, 
+                                                      lambda.full[i,2],
+                                                      q, max.iteration, tol = tol,
+                                                      initial_phi = initial.phi,
                                                       blocks, cv.index, group.index)
                 flag.full[i] <- test$flag
             }
-      
+
         }
         group.index.full <- group.index
         for(ii in 1:length(group.index)){
@@ -1683,63 +1684,63 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q,
         }
         if(group.case == "rowwise"){
             if(i == 1){
-                test <- var_break_fit_block_groupidx_cpp(data.temp, 
+                test <- var_break_fit_block_groupidx_cpp(data.temp,
                                                          lambda.full[i,1],
-                                                         lambda.full[i,2], 
-                                                         q, max.iteration, tol = tol, 
-                                                         initial_phi = 0.0 + matrix(0.0, p, p * q * n.new), 
+                                                         lambda.full[i,2],
+                                                         q, max.iteration, tol = tol,
+                                                         initial_phi = 0.0 + matrix(0.0, p, p * q * n.new),
                                                          blocks, cv.index, group.index.full)
-        
+
                 flag.full[i] <- test$flag
             }else if(is.na(cv[i-1])){
-                test <- var_break_fit_block_groupidx_cpp(data.temp, 
+                test <- var_break_fit_block_groupidx_cpp(data.temp,
                                                          lambda.full[i,1],
-                                                         lambda.full[i,2], 
-                                                         q, max.iteration, tol = tol, 
-                                                         initial_phi = 0.0 + matrix(0.0, p, p * q * n.new), 
+                                                         lambda.full[i,2],
+                                                         q, max.iteration, tol = tol,
+                                                         initial_phi = 0.0 + matrix(0.0, p, p * q * n.new),
                                                          blocks, cv.index, group.index.full)
-          
+
                 flag.full[i] <- test$flag
             }else{
                 initial.phi <- phi.final[[i-1]]
                 if(max(abs(phi.final[[i-1]])) > 10^3){
                     initial.phi <- 0 * phi.final[[i-1]]
                 }
-                test <- var_break_fit_block_groupidx_cpp(data.temp, 
+                test <- var_break_fit_block_groupidx_cpp(data.temp,
                                                          lambda.full[i,1],
-                                                         lambda.full[i,2], 
-                                                         q, max.iteration, tol = tol, 
-                                                         initial_phi = initial.phi, 
+                                                         lambda.full[i,2],
+                                                         q, max.iteration, tol = tol,
+                                                         initial_phi = initial.phi,
                                                          blocks, cv.index, group.index.full)
-        
+
                 flag.full[i] <- test$flag
             }
-      
+
         }
-    
+
         phi.hat.full <- test$phi.hat
         phi.final[[i]] <- phi.hat.full
-    
+
         ll <- c(0)
         brk.points.list <- vector("list",length(ll));
-    
+
         for(j in 1:length(ll)){
             phi.hat <- phi.hat.full
             n <- nob - q
             m.hat <- 0
             brk.points <- rep(0, n.new)
-      
+
             for(iii in 1:(n.new - 1)){
                 if(sum((phi.hat[,((iii - 1) * p * q + 1):(iii * p * q)])^2) > tol){
                     m.hat <- m.hat + 1
                     brk.points[m.hat] <- blocks[iii+1]
                 }
             }
-      
+
             loc <- rep(0, m.hat)
             brk.points <- brk.points[1:m.hat]
-          
-            # remove the boundary points and clean up 
+
+            # remove the boundary points and clean up
             brk.points <- brk.points[which(brk.points > 3 * mean(blocks.size))]
             brk.points <- brk.points[which(brk.points < (n - 3 * mean(blocks.size)))]
             m.hat <- length(brk.points)
@@ -1759,13 +1760,13 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q,
                     }
                 }
             }
-      
+
             brk.points.list[[j]] <- brk.points;
         }
-    
+
         brk.points.final[[i]] <- brk.points;
         m.hat <- length(brk.points);
-    
+
         # forecast the time series based on the estimated matrix Phi
         # and compute the forecast error
         phi.full.all <- vector("list",n.new);
@@ -1787,8 +1788,8 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q,
             temp.index[ff] <- blocks[cv.index[ff] + 1]
         }
         cv[i] <- (1 / (p * cv.l)) * sum((forecast.new - t(data.org[temp.index,]))^2)
-    
-        # break condition 
+
+        # break condition
         if(nlam1 >= 2){
             if(!(i %in% c(seq(1, kk, nlam1), seq(2, kk, nlam1))) && cv[i] > cv[i-1]){
                 i.lam2 <- i.lam2 + 1
@@ -1800,19 +1801,19 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q,
             i <- i + 1
         }
     }
-  
+
     # select the tuning parameter that has the small cross-validation value
     lll <- min(which(cv == min(cv, na.rm = TRUE)))
-    phi.hat.full <- phi.final[[lll]] 
-    
+    phi.hat.full <- phi.final[[lll]]
+
     # compute the estimated phi
     phi.par.sum <- vector("list", n.new)
     phi.par.sum[[1]] <- phi.hat.full[, 1:(p * q)]
     for(i in 2:n.new){
         phi.par.sum[[i]] <- phi.par.sum[[i-1]] + phi.hat.full[,((i - 1) * p * q + 1):(i * p * q)]
     }
-  
-    return(list(brk.points = brk.points.final[[lll]], cv = cv, 
+
+    return(list(brk.points = brk.points.final[[lll]], cv = cv,
                 cv1.final = lambda.full[lll, 1], cv2.final = lambda.full[lll, 2],
                 phi.full = phi.par.sum))
 }
@@ -1829,14 +1830,14 @@ first.step.blocks.group <- function(data.temp, lambda.1.cv, lambda.2.cv, q,
 #'   \item{HBIC}{HBIC value}
 #' }
 #' @keywords internal
-#' 
+#'
 BIC <- function(residual, phi, gamma.val = 1){
     p <- length(phi[, 1])
     q <- length(phi[1, ]) / p
     nob.new <- length(residual[1, ])
     count <- 0
     count = sum(phi != 0)
-  
+
     sigma.hat <- 0 * diag(p)
     for(i in 1:nob.new){
         sigma.hat <- sigma.hat + residual[, i] %*% t(residual[, i])
@@ -1846,11 +1847,11 @@ BIC <- function(residual, phi, gamma.val = 1){
     if(ee.temp <= 10^(-8)){
         sigma.hat <- sigma.hat + 2.0 * (abs(ee.temp) + 10^(-3)) * diag(p)
     }
-  
+
     log.det <- log(det(sigma.hat))
     count <- count
     return(list(
-        BIC = log.det + log(nob.new) * count / nob.new, 
+        BIC = log.det + log(nob.new) * count / nob.new,
         HBIC = log.det + 2 * gamma.val * log(p * q * p) * count / nob.new)
     )
 }
@@ -1858,15 +1859,15 @@ BIC <- function(residual, phi, gamma.val = 1){
 
 
 #' local screening step (second step).
-#' 
-#' @description Perform the local screening to "thin out" redundant break points. 
-#' 
+#'
+#' @description Perform the local screening to "thin out" redundant break points.
+#'
 #' @param method method: sparse, group sparse
-#' @param data input data matrix, with each column representing the time series component 
+#' @param data input data matrix, with each column representing the time series component
 #' @param eta tuning parameter eta for lasso
 #' @param q the AR order
 #' @param max.iteration max number of iteration for the fused lasso
-#' @param tol tolerance for the fused lasso 
+#' @param tol tolerance for the fused lasso
 #' @param pts the selected break points after the first step
 #' @param an the neighborhood size a_n
 #' @param phi.est.full parameter matrix
@@ -1881,36 +1882,36 @@ BIC <- function(residual, phi, gamma.val = 1){
 #' }
 #' @importFrom stats kmeans
 #' @keywords internal
-#' 
-second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1000, tol = 10^(-4), pts, an, 
-                              phi.est.full = NULL, blocks = NULL, use.BIC = FALSE, 
+#'
+second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1000, tol = 10^(-4), pts, an,
+                              phi.est.full = NULL, blocks = NULL, use.BIC = FALSE,
                               group.case = "columnwise", group.index = NULL){
     m <- length(pts)
     p = length(data[1,])
-  
-    # compute the local loss functions for each selected break points 
-    try <- break.var.local.new(method, data, eta, q, max.iteration = 1000, tol = tol, pts, an, 
+
+    # compute the local loss functions for each selected break points
+    try <- break.var.local.new(method, data, eta, q, max.iteration = 1000, tol = tol, pts, an,
                                group.case= group.case, group.index = group.index)
-    
-    # record the local loss function that include or exclude some break point 
+
+    # record the local loss function that include or exclude some break point
     L.n.1 = try$L.n.1
     L.n.2 = try$L.n.2
-    
+
     # record the local estimate left (1) and right (2)
     phi.local.1 = try$phi.local.1
     phi.local.2 = try$phi.local.2
-  
+
     # OMEGA is selected by data-driven method
-    # first, compute the V value as the difference of loss functions that include and exclude some break point 
+    # first, compute the V value as the difference of loss functions that include and exclude some break point
     V = rep(0, m)
     for(i in 1:m){
         V[i] = L.n.2[i] - (L.n.1[2 * i - 1] + L.n.1[2 * i])
     }
-  
+
     # add two boundary points as reference points (by assumption, their V values shoule be extremly small)
     nob <- length(data[,1])
     pts.redundant <- c(an + q, nob - an)
-    try.redundant <- break.var.local.new(method, data, eta, q, max.iteration = 1000, tol = tol, pts.redundant, an, 
+    try.redundant <- break.var.local.new(method, data, eta, q, max.iteration = 1000, tol = tol, pts.redundant, an,
                                          group.case= group.case, group.index = group.index)
     L.n.1.redundant = try.redundant$L.n.1
     L.n.2.redundant = try.redundant$L.n.2
@@ -1918,22 +1919,22 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
     for(i in 1:2){
         V.redundant[i] = L.n.2.redundant[i] - (L.n.1.redundant[2 * i - 1] + L.n.1.redundant[2 * i])
     }
-  
+
     # use the maximum value of V.redundant as the reference V value
     V <- c(V, rep(max(V.redundant), 2))
-  
+
     if(use.BIC == FALSE){
         if(length(unique(V)) <= 2){
             omega <- max(V) + 10^(-6)
         }else{
-        # use k-means to cluster the V 
+        # use k-means to cluster the V
             clus.2 <- kmeans(V, centers = 2)
-            fit.2 <- clus.2$betweenss / clus.2$totss 
+            fit.2 <- clus.2$betweenss / clus.2$totss
             if(fit.2 < 0.20){
                 omega <- max(V) + 10^(-6);
             }else{
             # if the reference point is in the subset with larger center, this means no change points: set omeage = max(V)
-            # otherwise, set omega = min(V) -1 
+            # otherwise, set omega = min(V) -1
                 loc <- clus.2$cluster
                 if(clus.2$centers[1] > clus.2$centers[2]){
                     omega <- min(V[which(loc == 1)]) - 10^(-6)
@@ -1960,8 +1961,8 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
         while(BIC.diff > 0 & length(unique(V)) > 1){
             pts.sel.old <- pts.sel
             omega.old <- omega
-      
-            # use k-means to cluster the V 
+
+            # use k-means to cluster the V
             clus.2 <- kmeans(V, centers = 2)
             fit.2 <- clus.2$betweenss / clus.2$totss
             if(fit.2 < 0.20){
@@ -1990,7 +1991,7 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
                 V[loc.idx] <- V[length(V)]
                 loc.block.full <- match(pts.sel, blocks)
             }
-      
+
             m.temp <- length(pts.sel)
             if(m.temp == 0){
                 stop("No change points! stop!")
@@ -2011,12 +2012,12 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
                     phi.full.all[[i.2]] <- phi.est.new[[i.1]]
                 }
             }
-     
+
             forecast.all.new <- matrix(0, p, nob)
-            forecast.all.new[, (blocks[1]+1+q):(blocks[1+1])] <- 
+            forecast.all.new[, (blocks[1]+1+q):(blocks[1+1])] <-
                 sapply(c((blocks[1] + 1 + q):(blocks[1+1])), function(jjj) pred(t(data), phi.full.all[[1]], q, jjj - 1 , p, 1))
             for(i.1 in 2:n.new){
-                forecast.all.new[, (blocks[i.1] + 1):(blocks[i.1 + 1])] <- 
+                forecast.all.new[, (blocks[i.1] + 1):(blocks[i.1 + 1])] <-
                     sapply(c((blocks[i.1] + 1):(blocks[i.1 + 1])), function(jjj) pred(t(data), phi.full.all[[i.1]], q, jjj - 1 , p, 1))
             }
             residual <- t(data[((1 + q):nob), ]) - forecast.all.new[, (1 + q):nob]
@@ -2030,21 +2031,21 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
             }
         }
     }
-  
-  
+
+
     # select the break points by localized information criterion (LIC)
     L.n.1.temp <- L.n.1
     L.n.2.temp <- L.n.2
     L.n.plot <- rep(0, m + 1)
-    L.n.plot[1] <- sum(L.n.1) + m * omega 
-    
+    L.n.plot[1] <- sum(L.n.1) + m * omega
+
     mm <- 0
     ic <- 0
     add.temp <- 0
     pts.full <- vector("list", m + 1)
     pts.full[[1]] <- pts
     ind.pts <- rep(0, m)
-    
+
     while(mm < m){
         mm <- mm + 1
         L.n.temp <- rep(0, length(pts))
@@ -2056,26 +2057,26 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
         pts <- pts[-ll]
         L.n.1.temp <- L.n.1.temp[-c(2 * ll - 1, 2 * ll)]
         add.temp <- add.temp + L.n.2.temp[ll]
-        L.n.2.temp <- L.n.2.temp[-ll] 
+        L.n.2.temp <- L.n.2.temp[-ll]
         L.n.plot[mm + 1] <- L.n.temp[ll] + (m - mm) * omega
         pts.full[[mm + 1]] <- pts
     }
     ind <- min(which.min(L.n.plot))
-  
-    return(list(pts = pts.full[[ind]], omega = omega, 
+
+    return(list(pts = pts.full[[ind]], omega = omega,
                 phi.local.1 = phi.local.1, phi.local.2 = phi.local.2))
 }
 
 
 
 #' Compute local loss function.
-#' 
+#'
 #' @param method method: sparse, group sparse
-#' @param data input data matrix, with each column representing the time series component 
+#' @param data input data matrix, with each column representing the time series component
 #' @param eta tuning parameter eta for lasso
 #' @param q the AR order
 #' @param max.iteration max number of iteration for the fused lasso
-#' @param tol tolerance for the fused lasso 
+#' @param tol tolerance for the fused lasso
 #' @param pts the selected break points after the first step
 #' @param an the neighborhood size a_n
 #' @param group.case group sparse pattern: columnwise, rowwise.
@@ -2086,13 +2087,13 @@ second.step.local <- function(method = "sparse", data, eta, q, max.iteration = 1
 #'   \item{L.n.2}{A vector of loss functions that exclude some break point}
 #' }
 #' @keywords internal
-#' 
-break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration = 1000, tol = 10^(-4), pts, an, 
+#'
+break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration = 1000, tol = 10^(-4), pts, an,
                                 group.case = "columnwise", group.index = NULL){
     p <- length(data[1,])
     nob <- length(data[,1])
     m <- length(pts)
-  
+
     # construct the local interval for computing the loss function
     bounds.1 <- vector("list", 2 * m)
     bounds.2 <- vector("list", m)
@@ -2101,22 +2102,22 @@ break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration =
         bounds.1[[(2*i)]] <- c(pts[i], pts[i] + an)
         bounds.2[[(i)]] <- c(pts[i] - an, pts[i] + an)
     }
-  
+
     # compute the local loss function that include the given break point
     L.n.1 <- c()
-    
+
     # add a hash table to store the local estimate
     phi.local.1 <- vector("list", m)
     phi.local.2 <- vector("list", m)
-  
+
     for(mm in 1:(2*m)){
         data.temp <- data[(bounds.1[[mm]][1]):(bounds.1[[mm]][2]),]
         if(method == "sparse" | method == "fLS"){
-            try <- var_lasso_brk(data = data.temp, eta, q, 1000, tol = tol)  
+            try <- var_lasso_brk(data = data.temp, eta, q, 1000, tol = tol)
         }
         if(method == "group sparse"){
             if(group.case == "columnwise"){
-                try <- var_lasso_brk_group(data = data.temp, eta, q, 1000, tol = tol, group.index)  
+                try <- var_lasso_brk_group(data = data.temp, eta, q, 1000, tol = tol, group.index)
             }
             if(group.case == "rowwise"){
                 group.index.full <- group.index
@@ -2127,14 +2128,14 @@ break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration =
                     }
                     group.index.full[[ii]] <- tmp
                 }
-                try <- var_lasso_brk_group_idx(data = data.temp, eta, q, 1000, tol = tol, group.index.full)  
+                try <- var_lasso_brk_group_idx(data = data.temp, eta, q, 1000, tol = tol, group.index.full)
             }
             if(group.case == 'index'){
                 group.index.full <- group.index
-                try <- var_lasso_brk_group_idx(data = data.temp, eta, q, 1000, tol = tol, group.index.full)  
+                try <- var_lasso_brk_group_idx(data = data.temp, eta, q, 1000, tol = tol, group.index.full)
             }
         }
-    
+
         L.n.1 <- c(L.n.1, try$pred.error)
         key <- ceiling(mm / 2)
         if(mm %% 2 == 1){
@@ -2143,7 +2144,7 @@ break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration =
             phi.local.2[[key]] <- try$phi.hat
         }
     }
-  
+
     # compute the local loss function that include the given break point
     L.n.2 <- c()
     for(mm in 1:m){
@@ -2157,20 +2158,20 @@ break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration =
         L.n.2 <- c(L.n.2, try$pred.error)
     }
 
-    return(list(L.n.1 = L.n.1, L.n.2 = L.n.2, 
+    return(list(L.n.1 = L.n.1, L.n.2 = L.n.2,
                 phi.local.1 = phi.local.1, phi.local.2 = phi.local.2))
 }
 
 
 
 #' Exhaustive search step (third step).
-#' 
-#' @description Perform the exhaustive search to select the break point for each cluster. 
-#' 
-#' @param data input data matrix, with each column representing the time series component 
+#'
+#' @description Perform the exhaustive search to select the break point for each cluster.
+#'
+#' @param data input data matrix, with each column representing the time series component
 #' @param q the AR order
 #' @param max.iteration max number of iteration for the fused lasso
-#' @param tol tolerance for the fused lasso 
+#' @param tol tolerance for the fused lasso
 #' @param pts.list the selected break points clustered by a_n after the second step
 #' @param an the neighborhood size a_n
 #' @param phi.est.full list of local parameter estimator
@@ -2182,29 +2183,29 @@ break.var.local.new <- function(method = "sparse", data, eta, q, max.iteration =
 #'   \item{pts}{a set of final selected break point after the third exhaustive search step}
 #' }
 #' @keywords internal
-#' 
-third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = tol, pts.list, 
+#'
+third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = tol, pts.list,
                               an, phi.est.full = NULL, phi.local.1 = NULL, phi.local.2 = NULL,
                               blocks = NULL){
-    
+
     N <- length(data[,1])
     p <- length(data[1,])
     n <- length(pts.list)  # number of cluster
     n.new <- length(phi.est.full)
-  
+
     final.pts <- rep(0, n)
     pts.list.full <- pts.list
     pts.list.full <- c(1, pts.list.full, N)
     phi.hat.list <- vector("list", n + 1)
-    
+
     cp.index.list <- vector("list", n + 2)
     cp.index.list[[1]] <- c(1)
     cp.index.list[[n+2]] <- c(n.new + 1)
-    
+
     cp.list.full <- vector("list", n+2)
     cp.list.full[[1]] <- c(1)
     cp.list.full[[n+2]] <- c(N + 1)
-  
+
     bn = median(diff(blocks))
     for(i in 1:n){
         pts.temp <- pts.list.full[[i+1]]
@@ -2219,23 +2220,23 @@ third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = to
     }
     fx <- function(i){
         idx <- floor((min(cp.index.list[[i+1]]) + max(cp.index.list[[i]])) / 2)
-        
-        # change the global variable phi.hat.list[[i]] 
+
+        # change the global variable phi.hat.list[[i]]
         phi.hat.list[[i]] <<- phi.est.full[[idx]]
         pts.temp <- pts.list.full[[i+1]]
         m <- length(pts.temp)
         lb.1 <- min(pts.temp) - an
         ub.2 <- max(pts.temp) +  an - 1
-        
+
         nums = cp.list.full[[i+1]]
         phi.hat.1 = matrix(phi.local.1[[i]], ncol = p * q)
         phi.hat.2 = matrix(phi.local.2[[i]], ncol = p * q)
         res = local_refine(data, q = q, blocks, cp.list.full[[i+1]], lb.1, ub.2, phi.hat.1, phi.hat.2)
         sse.full = res$sse_full
-        
+
         # select the point that has the smallest SSE among the cluster
         cp.list.full[[i+1]][min(which(sse.full == min(sse.full)))]
-    
+
     }
     final.pts <- sapply(1:n, fx)
     idx <- floor((min(cp.index.list[[n+2]]) + max(cp.index.list[[n+1]])) / 2)
@@ -2246,9 +2247,9 @@ third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = to
 
 
 #' Select the lag of the VAR model using total BIC method
-#' 
+#'
 #' @description Select the lag of the VAR model (if the lag is unknown) using BIC method for total segments
-#' 
+#'
 #' @param data input data matrix, each column represents the time series component
 #' @param method method is sparse
 #' @param lag_candidates potential lag selection set
@@ -2256,28 +2257,31 @@ third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = to
 #' \describe{
 #'     \item{select_lag}{An integer no less than 1 represents the selected lag of time series.}
 #' }
-#' @export
-#' @importFrom sparsevar
-#' @examples 
-#' # Genearte simulation time series
+#'
+#' @import sparsevar
+#' @examples
+#' \donttest{
 #' nob <- 1000; p <- 15
 #' brk <- c(floor(nob / 2), nob + 1)
 #' m <- length(brk)
 #' q.t <- 2 # the lag of VAR model for simulation
 #' signals <- c(-0.8, 0.6, 0.4)
-#' try <- simu_var(method = "sparse", nob = nob, k = p, brk = brk, 
-#'                 signals = signals, lags_vector = c(1, 2), 
+#' try <- simu_var(method = "sparse", nob = nob, k = p, brk = brk,
+#'                 signals = signals, lags_vector = c(1, 2),
 #'                 sp_pattern = "off-diagonal")
 #' data <- try$series; data <- as.matrix(data)
-#' 
+#'
 #' # Apply lag selection to determine the lag for the given time series
 #' lag_candi <- c(1, 2, 3, 4)
-#' select_lag <- lag.selection(data, "sparse", lag_candi)
+#' select_lag <- lag_selection(data = data,
+#'                             method = "sparse", lag_candidates = lag_candi)
 #' print(select_lag)
-lag.selection <- function(data, method = c("sparse", "group sparse", "fLS"), lag_candidates){
+#' }
+#' @export
+lag_selection <- function(data, method = c("sparse", "group sparse", "fLS"), lag_candidates){
     nob <- length(data[,1])
     p <- length(data[1,])
-    
+
     BIC_full <- rep(0, length(lag_candidates))
     for(i in 1:length(lag_candidates)){
         d <- lag_candidates[i]
@@ -2318,12 +2322,12 @@ lag.selection <- function(data, method = c("sparse", "group sparse", "fLS"), lag
 
 #' cluster the points by neighborhood size a_n
 #' @description helper function for determining the clusters
-#' 
+#'
 #' @param pts vector of candidate change points
 #' @param an radius of the cluster
 #' @return A list of change points clusters
 #' @keywords internal
-#' 
+#'
 block.finder <- function(pts, an){
     nn <- length(pts)
     if(nn == 1){
@@ -2347,7 +2351,7 @@ block.finder <- function(pts, an){
         l <- length(b[[jj]])
         if(b[[jj]][l] != pts[nn]){
             jj <- jj + 1
-            b[[jj]] <- c(pts[nn])   
+            b[[jj]] <- c(pts[nn])
         }
         b <- b[1:jj]
     }
@@ -2357,7 +2361,7 @@ block.finder <- function(pts, an){
 
 
 #' Prediction function (block)
-#' 
+#'
 #' @param Y data for prediction
 #' @param phi parameter matrix
 #' @param q lag
@@ -2366,7 +2370,7 @@ block.finder <- function(pts, an){
 #' @param h the length of observation to predict
 #' @return prediction matrix
 #' @keywords internal
-#' 
+#'
 pred.block <- function(Y, phi, q, nob, p, h){
     concat.Y <- matrix(0, p, q + h)
     concat.Y[,1:q] <- Y[,(nob - q + 1):nob]
@@ -2375,7 +2379,7 @@ pred.block <- function(Y, phi, q, nob, p, h){
         for (i in 1:q){
             temp <- temp + phi[,((i - 1) * p + 1):(i * p)] %*% concat.Y[,q + j - i]
         }
-        concat.Y[,q + j] <- temp 
+        concat.Y[,q + j] <- temp
     }
     return(as.matrix(concat.Y[,(q + 1):(q + h)]))
 }
@@ -2399,28 +2403,30 @@ pred <- function(Y, phi, q, nob, p, h){
         for (i in 1:q){
             temp <- temp + phi[,((i-1) * p + 1):(i * p)] %*% concat.Y[,q + j - i]
         }
-        concat.Y[,q + j] <- temp 
+        concat.Y[,q + j] <- temp
     }
     return(as.matrix(concat.Y[,q + h]))
 }
 
 #' Plot the AR coefficient matrix
+#' @param phi combined coefficient matrices for all lags
 #' @param p number of segments times number of lags
 #' @return a plot of AR coefficient matrix
 #' @import lattice
 #' @importFrom grDevices colorRampPalette
 #' @export
-#' @examples 
-#' nob <- (10^3 * 4) #number of time points
-#' p <- 15 # number of time series components
-#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1) # true break points with nob+1 as the last element
-#' m0 <- length(brk) - 1 # number of break points
-#' q.t <- 2 # the true AR order
-#' m <- m0 + 1 #number of segments
+#' @examples
+#' nob <- 4 * 10^3
+#' p <- 15
+#' brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+#' m0 <- length(brk) - 1
+#' q.t <- 2
+#' m <- m0 + 1
 #' sp_density <- rep(0.05, m*q.t) #sparsity level (5%)
-#' try <- simu_var("sparse", nob = nob, k = p, lags = q.t, brk = brk, sp_pattern = "random", sp_density = sp_density)
+#' try <- simu_var("sparse", nob = nob, k = p, lags = q.t, brk = brk,
+#'                 sp_pattern = "random", sp_density = sp_density)
 #' print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
-#' 
+#'
 plot_matrix <- function(phi, p){
     name <- NULL
     B <- phi
@@ -2455,8 +2461,8 @@ plot_matrix <- function(phi, p){
     }
     at <- c(at, at2)
     se2 = seq(1.75, by = k, length = k)
-    L2 <- levelplot(as.matrix(f(B)), at =seq( -max(abs(B)), max(abs(B)), length=101),col.regions = rgb.palette(100), 
-                    colorkey = NULL, xlab = NULL, ylab = NULL, main = list(label = name, cex = 1), 
+    L2 <- levelplot(as.matrix(f(B)), at =seq( -max(abs(B)), max(abs(B)), length=101),col.regions = rgb.palette(100),
+                    colorkey = NULL, xlab = NULL, ylab = NULL, main = list(label = name, cex = 1),
                     panel = function(...){
                         panel.levelplot(...)
                         panel.abline(a = NULL, b = 1, h = seq(1.5, m * s + p * k + 0.5, by = 1), v = seq(1.5, by = 1, length = p * k + m * s), lwd = 0.5)
@@ -2465,7 +2471,7 @@ plot_matrix <- function(phi, p){
                         b1 <- c(bl1, b23)
                         panel.abline(a = NULL, b = 1, v = p * k + 0.5, lwd = 3)
                         panel.abline(a = NULL, b = 1, v = b1, lwd = 2)
-                    }, scales = list(x = list(alternating = 1, labels = text, cex = 2, at = at, tck = c(0, 0)), 
+                    }, scales = list(x = list(alternating = 1, labels = text, cex = 2, at = at, tck = c(0, 0)),
                                      y = list(alternating = 0, tck = c(0, 0))))
     return(L2)
 }
@@ -2492,7 +2498,7 @@ remove.extra.pts <- function(pts, brk){
         ll <- min(which.min(dis))
         pts.temp[i] <- pts[ll]
     }
-  
+
     pts <- pts.temp
     return(pts)
 }
@@ -2501,7 +2507,7 @@ remove.extra.pts <- function(pts, brk){
 
 
 #' A helper function for implementing FISTA algorithm to estimate low-rank matrix
-#' 
+#'
 #' @description Function to estimate low-rank matrix using FISTA algorithm
 #' @param A A n by p design matrix
 #' @param b A correspond vector, or a matrix
@@ -2517,7 +2523,7 @@ remove.extra.pts <- function(pts, brk){
 #'     \item{rel.err}{Relative error to the true model parameter, only available for simulation}
 #' }
 #' @keywords internal
-#' 
+#'
 fista.nuclear <- function(A, b, lambda, d, niter, backtracking = TRUE, phi.true){
     tnew = t <- 1
     x <- matrix(0, d, d)
@@ -2525,7 +2531,7 @@ fista.nuclear <- function(A, b, lambda, d, niter, backtracking = TRUE, phi.true)
     y <- x
     AtA <- t(A) %*% A
     Atb <- t(A) %*% b
-    
+
     obj.val = rel.err <- c()
     if(backtracking == TRUE){
         L <- norm(A, "2")^2 / 5
@@ -2552,7 +2558,7 @@ fista.nuclear <- function(A, b, lambda, d, niter, backtracking = TRUE, phi.true)
         t <- tnew
         tnew <- (1 + sqrt(1 + 4 * t^2)) / 2
         y <- xnew + ((t - 1) / tnew) * (xnew - x)
-        
+
         obj.val <- c(obj.val, f.func(xnew, A, b) + nuclear.pen(xnew, lambda))
         rel.err <- c(rel.err, norm(xnew - phi.true, "F") / norm(phi.true, "F"))
     }
@@ -2570,7 +2576,7 @@ fista.nuclear <- function(A, b, lambda, d, niter, backtracking = TRUE, phi.true)
 #' @param Atb inner product for design matrix A and correspond vector b
 #' @return value of proximal function
 #' @keywords internal
-#' 
+#'
 prox.nuclear.func.fLS <- function(y, A, b, L, lambda, AtA, Atb){
     Y <- y - (1 / L) * gradf.func(y, AtA, Atb)
     d <- shrinkage.lr(svd(Y)$d, 2*lambda / L)
@@ -2578,14 +2584,14 @@ prox.nuclear.func.fLS <- function(y, A, b, L, lambda, AtA, Atb){
 }
 
 
-#' function for detection check
+#' Function for detection performance check
 #' @param pts.final a list of estimated change points
 #' @param brk the true change points
 #' @param nob length of time series
-#' @param critval critical value for selection rate. Default value is 5. Specifically, to compute the selection rate,  a selected break point is counted as a ``success'' for the \eqn{j}-th true break point, \eqn{t_j}, if it falls in the interval \eqn{[t_j - {(t_{j} - t_{j-1})}/{critval}, t_j + {(t_{j+1} - t_{j})}/{critval}]}, \eqn{j = 1,\dots, m_0}. 
-#' @return a matrix of detection summary results, including the absolute error, selection rate and relative location. The absolute error of the locations of the estimated break points is defined as \eqn{{error}_j =|tilde{t}_j^f - t_j|}, \eqn{j = 1,\dots, m_0}.
+#' @param critval critical value for selection rate. Default value is 5. Specifically, to compute the selection rate,  a selected break point is counted as a ``success'' for the \eqn{j}-th true break point, \eqn{t_j}, if it falls in the interval \eqn{[t_j - {(t_{j} - t_{j-1})}/{critval}, t_j + {(t_{j+1} - t_{j})}/{critval}]}, \eqn{j = 1,\dots, m_0}.
+#' @return a matrix of detection summary results, including the absolute error, selection rate and relative location. The absolute error of the locations of the estimated break points is defined as \eqn{{error}_j =|\tilde{t}_j^f - t_j|}, \eqn{j = 1,\dots, m_0}.
 #' @export
-#' @examples 
+#' @examples
 #' # an example of 10 replicates result
 #' set.seed(1)
 #' nob <- 1000
@@ -2605,7 +2611,7 @@ prox.nuclear.func.fLS <- function(y, A, b, L, lambda, AtA, Atb){
 #' # use a stricter critical value
 #' res <- detection_check(cp.list, brk, nob, critval = 10)
 #' res
-#' 
+#'
 detection_check <- function(pts.final, brk, nob, critval = 5){
     N <- length(pts.final)
     m <- length(brk)
@@ -2616,17 +2622,17 @@ detection_check <- function(pts.final, brk, nob, critval = 5){
     pts.final.full.1 <- vector("list", N)
     pts.final.full.2 <- vector("list", N)
     for(i in 1:N){
-        if(length(pts.final[[i]]) > (m-1)){
+        if(length(pts.final[[i]]) > (m - 1)){
             pts.final[[i]] <- remove.extra.pts(pts.final[[i]], brk)
         }
         if(length(pts.final[[i]]) == 0){
             # pts.final.full.1 only counts those points within 1 / critval intervals in order to compute the selection rate
             # pts.final.full.2 counts all the points in order to calculate the mean and sd for the location error
-            pts.final[[i]] <- rep(0, m-1)
-            pts.final.full.1[[i]] <- rep(0, m-1)
-            pts.final.full.2[[i]] <- rep(0, m-1)  
+            pts.final[[i]] <- rep(0, m - 1)
+            pts.final.full.1[[i]] <- rep(0, m - 1)
+            pts.final.full.2[[i]] <- rep(0, m - 1)
         }
-        if(length(pts.final[[i]]) > 0 && length(pts.final[[i]]) <= m-1){
+        if((length(pts.final[[i]]) > 0) && (length(pts.final[[i]]) <= m-1)){
             ll <- length(pts.final[[i]])
             pts.final.full.1[[i]] <- rep(0, m - 1)
             pts.final.full.2[[i]] <- rep(0, m - 1)
@@ -2645,7 +2651,7 @@ detection_check <- function(pts.final, brk, nob, critval = 5){
                     if(pts.final[[i]][j] < (brk[1] + (1/2) * (brk[2] - brk[1]))){
                         pts.final.full.2[[i]][1] <- pts.final[[i]][j]
                     }
-                    
+
                     for(kk in 2:(m-1)){
                         if(pts.final[[i]][j] >= (brk[(kk)] - (1 / critval)*(brk[kk] - brk[(kk-1)])) && pts.final[[i]][j] < (brk[(kk)] + (1 / critval) * (brk[kk+1] - brk[(kk)]))){
                             pts.final.full.1[[i]][kk] <- pts.final[[i]][j]
@@ -2664,7 +2670,7 @@ detection_check <- function(pts.final, brk, nob, critval = 5){
             }
         }
     }
-    
+
     # detection result matrix
     detection <- matrix(0, m, 7)
     detection[1, 1] <- c("break points")
@@ -2687,35 +2693,35 @@ detection_check <- function(pts.final, brk, nob, critval = 5){
         }
         loc.1 <- loc.1[which(loc.1 != 0)]
         loc.2 <- loc.2[which(loc.2 != 0)]
-        nob.new.1 <- length(loc.1) 
+        nob.new.1 <- length(loc.1)
         detection[(i+1), 3] <- mean(abs(loc.2 - brk[i]))
         detection[(i+1), 4] <- sd(abs(loc.2 - brk[i]))
         detection[(i+1), 5] <- nob.new.1 / N
         detection[(i+1), 6] <- mean(loc.2 / nob)
         detection[(i+1), 7] <- sd(loc.2 / nob)
     }
-    
+
     for(i in 2:(m)){
         for(j in 2:7){
             detection[i, j] <- round(as.numeric(detection[i, j]), digits = 4)
         }
     }
-    df.result <- data.frame(truth = as.numeric(detection[-1, 2]) / nob, 
-                            mean_rl = detection[-1, 6], 
-                            std_rl = detection[-1, 7], 
-                            sr = detection[-1, 5])
-    
+    df.result <- data.frame(truth = round(as.numeric(detection[-1, 2]) / nob, 4),
+                            mean_rl = round(as.numeric(detection[-1, 6]), 4),
+                            std_rl = round(as.numeric(detection[-1, 7]), 4),
+                            sr = round(as.numeric(detection[-1, 5]), 4))
+
     colnames(df.result) <- c("Truth", "Mean", "Std", "Selection rate")
     return(list(df_detection = df.result, full_detection = detection))
 }
 
 
-#' function for Hausdorff distance computation
-#' 
-#' @description The function includes two Hausdorff distance. 
-#' The first one is hausdorff_true_est (\eqn{d(A_n, tilde{A}_n^f)}): for each estimated change point, we find the closest true CP and compute the distance, then take the maximum of distances.
-#' The second one is hausdorff_est_true(\eqn{d(tilde{A}_n^f, A_n)}): for each true change point, find the closest estimated change point and compute the distance, then take the maximum of distances.
-#' 
+#' Function for Hausdorff distance computation
+#'
+#' @description The function includes two Hausdorff distance.
+#' The first one is hausdorff_true_est (\eqn{d(A_n, \tilde{A}_n^f)}): for each estimated change point, we find the closest true CP and compute the distance, then take the maximum of distances.
+#' The second one is hausdorff_est_true(\eqn{d(\tilde{A}_n^f, A_n)}): for each true change point, find the closest estimated change point and compute the distance, then take the maximum of distances.
+#'
 #' @param pts.final a list of estimated change points
 #' @param brk the true change points
 #' @return Hausdorff distance summary results, including mean, standard deviation and median.
@@ -2739,7 +2745,7 @@ detection_check <- function(pts.final, brk, nob, critval = 5){
 #' cp.list
 #' res <- hausdorff_check(cp.list, brk)
 #' res
-#' 
+#'
 hausdorff_check <- function(pts.final, brk){
     N <- length(pts.final)
     m <- length(brk)
@@ -2747,7 +2753,7 @@ hausdorff_check <- function(pts.final, brk){
     for(i in 1:N){
         len[i] <- length(pts.final[[i]])
     }
-  
+
     # Implementation of hausdorff_true_est d(A_n, \tilde{A}_n^f)
     # for each estimated cp, find the closest true CP and compute the distance,
     # then take the maximum of distances
@@ -2777,7 +2783,7 @@ hausdorff_check <- function(pts.final, brk){
             cat("There is no estimated break points!")
         }
     }
-  
+
     # Implementation of Hausdorff_est_true d(\tilde{A}_n^f, A_n)
     # for each true change point, find the closest estimate CP and compute the distance,
     # then take the maximum of distances
@@ -2796,7 +2802,7 @@ hausdorff_check <- function(pts.final, brk){
                     }
                     if(ll >= 3){
                         for(kk in 2:(ll-1)){
-                            if(brk[j] >= (pts.final[[i]][(kk-1)] + (1/2) * (pts.final[[i]][kk] - pts.final[[i]][(kk-1)])) 
+                            if(brk[j] >= (pts.final[[i]][(kk-1)] + (1/2) * (pts.final[[i]][kk] - pts.final[[i]][(kk-1)]))
                                && brk[j] < (pts.final[[i]][(kk)] + (1/2) * (pts.final[[i]][kk+1] - pts.final[[i]][(kk)]))){
                                 pts.final.full.2[[i]][j] <- pts.final[[i]][kk]
                             }
@@ -2808,7 +2814,7 @@ hausdorff_check <- function(pts.final, brk){
             }
         }
     }
-  
+
     distance.1 <- rep(NA, N)
     distance.2 <- rep(NA, N)
     distance.full <- rep(NA, N)
@@ -2821,19 +2827,19 @@ hausdorff_check <- function(pts.final, brk){
         distance.2[j] <- max(abs(pts.final.full.2[[j]] - brk[1:(m-1)]))
         distance.full[j] <- max(distance.1[j], distance.2[j])
     }
-  
+
     Mean <- mean(distance.full, na.rm = TRUE)
     Std <- sd(distance.full, na.rm = TRUE)
     Median <- median(distance.full, na.rm = TRUE)
     detection <- data.frame(Mean, Std, Median)
-  
+
     return(distance = detection)
 }
 
 
 #' Evaluation function, return the performance of simulation results
 #' @param true_mats a list of true matrices for all segments, the length of list equals to the true number of segments
-#' @param est_mats a list of estimated matrices for all simulation replications, for each element, it is a list of numeric matrices, 
+#' @param est_mats a list of estimated matrices for all simulation replications, for each element, it is a list of numeric matrices,
 #' representing the estimated matrices for segments
 #' @return A list, containing the results for all measurements
 #' \describe{
@@ -2853,7 +2859,7 @@ hausdorff_check <- function(pts.final, brk){
 #'     est_mats[[i]] <- vector('list', 2)
 #'     est_mats[[i]][[1]] <- matrix(sample(c(0, 1, 2), size = 4, replace = TRUE), 2, 2, byrow = TRUE)
 #'     est_mats[[i]][[2]] <- matrix(sample(c(0, 1), size = 4, replace = TRUE), 2, 2, byrow = TRUE)
-#' } 
+#' }
 #' perf_eval <- eval_func(true_mats, est_mats)
 eval_func <- function(true_mats, est_mats){
     true_length <- length(true_mats)
@@ -2893,9 +2899,9 @@ eval_func <- function(true_mats, est_mats){
             MCC <- c(MCC, (tp*tn - fp*fn) / sqrt((tp+fp)*(tp+fn)*(tn+fp)*(tn+fn)))
         }
     }
-    eval_mat <- data.frame("SEN" = c(round(mean(SEN), 4), round(sd(SEN), 4)), 
-                           "SPC" = c(round(mean(SPC), 4), round(sd(SPC), 4)), 
-                           "ACC" = c(round(mean(ACC), 4), round(sd(ACC), 4)), 
+    eval_mat <- data.frame("SEN" = c(round(mean(SEN), 4), round(sd(SEN), 4)),
+                           "SPC" = c(round(mean(SPC), 4), round(sd(SPC), 4)),
+                           "ACC" = c(round(mean(ACC), 4), round(sd(ACC), 4)),
                            "MCC" = c(round(mean(MCC), 4), round(sd(MCC), 4)))
     rownames(eval_mat) <- c("Mean", "Std")
     return(list(perf_eval = eval_mat, false_reps = incorrect_rep))
@@ -2903,7 +2909,7 @@ eval_func <- function(true_mats, est_mats){
 
 
 
-#' Function to plot Granger causality network
+#' Function to plot Granger causality networks
 #' @description A function to plot Granger causal network for each segment via estimated sparse component
 #' @param est_mats A list of numeric sparse matrices, indicating the estimated sparse components for each segment
 #' @param threshold A numeric positive value, used to determine the threshold to present the edges
@@ -3026,9 +3032,9 @@ plot_density <- function(est_mats, threshold = 0.1){
 #' plot(fit, display = "granger", threshold = 0.2, layout = "nicely")
 #' plot(fit, display = "density", threshold = 0.2)
 #' @export
-plot.VARDetect.result <- function(x, 
+plot.VARDetect.result <- function(x,
                                   display = c("cp", "param", "granger", "density"),
-                                  threshold = 0.1, 
+                                  threshold = 0.1,
                                   layout = c("circle", "star", "nicely"), ...){
     display <- match.arg(display)
     layout <- match.arg(layout)
@@ -3042,21 +3048,21 @@ plot.VARDetect.result <- function(x,
             ts.plot(x$data)
             abline(v = x$cp, col = "red", lwd = 2)
         }
-        
+
     }
-    
+
     if(display == "param"){
         if(!is.null(x$est_phi)){
-            cat(plot_matrix(do.call("cbind", x$est_phi), length(x$est_phi) * x$q))
+            print(plot_matrix(do.call("cbind", x$est_phi), length(x$est_phi) * x$q))
         }else{
             stop("Estimated model parameter is not available!!!")
         }
     }
-    
+
     if(display == "granger"){
         plot_granger(x$sparse_mats, threshold = threshold, layout = layout)
     }
-    
+
     if(display == "density"){
         plot_density(x$sparse_mats, threshold = threshold)
     }
@@ -3123,7 +3129,7 @@ summary.VARDetect.result <- function(object, threshold = 0.1, ...){
             cat("There is no low rank components in the current model! \n")
         }
     }
-    
+
     # running time summary
     cat("==================================================================\n")
     cat("Running time is: ")
@@ -3195,7 +3201,7 @@ print.VARDetect.result <- function(x, ...){
 #' @param mu tuning parameter for low rank component, only available when method is set to "fLS"
 #' @param q the AR order
 #' @param max.iteration max number of iteration for the fused lasso
-#' @param tol tolerance for the fused lasso 
+#' @param tol tolerance for the fused lasso
 #' @param block.size the block size
 #' @param blocks the blocks
 #' @param refit logical; if TRUE, refit the VAR model for parameter estimation. Default is FALSE.
@@ -3217,46 +3223,46 @@ print.VARDetect.result <- function(x, ...){
 #' m <- length(brk); q.t <- 1
 #' sp_density <- rep(0.05, m * q.t)
 #' signals <- c(-0.6, 0.6, -0.6)
-#' try_simu <- simu_tbss(nreps = 3, simu_method = "sparse", nob = nob, 
-#'                       k = p, lags = q.t, brk = brk, sigma = diag(p), 
-#'                       signals = signals, sp_density = sp_density, 
-#'                       sp_pattern = "random", est_method = "sparse", q = q.t, 
+#' try_simu <- simu_tbss(nreps = 3, simu_method = "sparse", nob = nob,
+#'                       k = p, lags = q.t, brk = brk, sigma = diag(p),
+#'                       signals = signals, sp_density = sp_density,
+#'                       sp_pattern = "random", est_method = "sparse", q = q.t,
 #'                       refit = TRUE)
 #' }
-simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS"), nob, k, lags = 1, 
-                      lags_vector = NULL, brk, sigma, skip = 50, group_mats = NULL, 
-                      group_type = c("columnwise", "rowwise"), group_index = NULL, 
-                      sparse_mats = NULL, sp_density = NULL, signals = NULL, rank = NULL, info_ratio = NULL, 
-                      sp_pattern = c("off-diagonal", "diagoanl", "random"), 
-                      singular_vals = NULL, spectral_radius = 0.9, est_method = c("sparse", "group sparse", "fLS"), 
-                      q = 1, tol = 1e-2, lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL, 
-                      group.index = NULL, group.case = c("columnwise", "rowwise"), max.iteration = 100, 
+simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS"), nob, k, lags = 1,
+                      lags_vector = NULL, brk, sigma, skip = 50, group_mats = NULL,
+                      group_type = c("columnwise", "rowwise"), group_index = NULL,
+                      sparse_mats = NULL, sp_density = NULL, signals = NULL, rank = NULL, info_ratio = NULL,
+                      sp_pattern = c("off-diagonal", "diagoanl", "random"),
+                      singular_vals = NULL, spectral_radius = 0.9, est_method = c("sparse", "group sparse", "fLS"),
+                      q = 1, tol = 1e-2, lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL,
+                      group.index = NULL, group.case = c("columnwise", "rowwise"), max.iteration = 100,
                       refit = FALSE, block.size = NULL, blocks = NULL, use.BIC = TRUE, an.grid = NULL){
     simu_method <- match.arg(simu_method)
     group_type <- match.arg(group_type)
     sp_pattern <- match.arg(sp_pattern)
     est_method <- match.arg(est_method)
     group.case <- match.arg(group.case)
-    # storage variables 
-    
+    # storage variables
+
     est_cps <- vector('list', nreps)
     est_sparse_mats <- vector('list', nreps)
     est_lowrank_mats <- vector('list', nreps)
     est_phi_mats <- vector('list', nreps)
     running_times <- rep(0, nreps)
-    
+
     # start fitting
     for(rep in 1:nreps){
         cat(paste("========================== Start replication:", rep, "==========================\n", sep = " "))
-        try <- simu_var(method = simu_method, nob = nob, k = k, lags = lags, lags_vector = lags_vector, 
-                 brk = brk, sigma = sigma, skip = skip, group_mats = group_mats, group_type = group_type, 
-                 group_index = group_index, sparse_mats = sparse_mats, sp_pattern = sp_pattern, 
-                 sp_density = sp_density, signals = signals, rank = rank, info_ratio = info_ratio, 
+        try <- simu_var(method = simu_method, nob = nob, k = k, lags = lags, lags_vector = lags_vector,
+                 brk = brk, sigma = sigma, skip = skip, group_mats = group_mats, group_type = group_type,
+                 group_index = group_index, sparse_mats = sparse_mats, sp_pattern = sp_pattern,
+                 sp_density = sp_density, signals = signals, rank = rank, info_ratio = info_ratio,
                  singular_vals = singular_vals, spectral_radius = spectral_radius, seed = rep)
         data <- as.matrix(try$series)
-        fit <- tbss(data, method = est_method, q = q, tol = tol, lambda.1.cv = lambda.1.cv, 
-                    lambda.2.cv = lambda.2.cv, mu = mu, group.index = group.index, 
-                    group.case = group.case, max.iteration = max.iteration, refit = refit, 
+        fit <- tbss(data, method = est_method, q = q, tol = tol, lambda.1.cv = lambda.1.cv,
+                    lambda.2.cv = lambda.2.cv, mu = mu, group.index = group.index,
+                    group.case = group.case, max.iteration = max.iteration, refit = refit,
                     block.size = block.size, blocks = blocks, use.BIC = use.BIC, an.grid = an.grid)
         est_cps[[rep]] <- fit$cp
         est_sparse_mats[[rep]] <- fit$sparse_mats
@@ -3265,36 +3271,36 @@ simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS"), n
         running_times[rep] <- fit$time[3]
         cat("========================== Finished ==========================\n")
     }
-    
+
     if(simu_method == "fLS"){
         ret <- structure(list(sizes = c(nob, k),
                               true_lag = lags,
-                              true_lagvector = lags_vector, 
-                              true_cp = brk, 
-                              true_sparse = try$sparse_param, 
+                              true_lagvector = lags_vector,
+                              true_cp = brk,
+                              true_sparse = try$sparse_param,
                               true_lowrank = try$lowrank_param,
                               true_phi = try$model_param,
-                              est_cps = est_cps, 
-                              est_lags = q, 
+                              est_cps = est_cps,
+                              est_lags = q,
                               est_lagvector = q,
-                              est_sparse_mats = est_sparse_mats, 
-                              est_lowrank_mats = est_lowrank_mats, 
-                              est_phi_mats = est_phi_mats, 
+                              est_sparse_mats = est_sparse_mats,
+                              est_lowrank_mats = est_lowrank_mats,
+                              est_phi_mats = est_phi_mats,
                               running_times = running_times), class = "VARDetect.simu.result")
     }else{
         ret <- structure(list(sizes = c(nob, k),
                               true_lag = lags,
-                              true_lagvector = lags_vector, 
-                              true_cp = brk, 
-                              true_sparse = try$sparse_param, 
+                              true_lagvector = lags_vector,
+                              true_cp = brk,
+                              true_sparse = try$sparse_param,
                               true_lowrank = NULL,
                               true_phi = try$model_param,
-                              est_cps = est_cps, 
-                              est_lags = q, 
+                              est_cps = est_cps,
+                              est_lags = q,
                               est_lagvector = q,
-                              est_sparse_mats = est_sparse_mats, 
-                              est_lowrank_mats = NULL, 
-                              est_phi_mats = est_phi_mats, 
+                              est_sparse_mats = est_sparse_mats,
+                              est_lowrank_mats = NULL,
+                              est_phi_mats = est_phi_mats,
                               running_times = running_times), class = "VARDetect.simu.result")
     }
     return(ret)
@@ -3305,7 +3311,7 @@ simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS"), n
 #' @description A function to summarize the results for simulation class \code{VARDetect.simu.result}
 #' @param object A S3 object of class \code{VARDetect.simu.result}
 #' @param critical A positive integer, set as the critical value defined in selection rate, to control the range of success, default is 5
-#' @param ... not in use 
+#' @param ... not in use
 #' @return A series of summary, including the selection rate, Hausdorff distance, and statistical measurements, running times
 #' @examples
 #' \donttest{
@@ -3314,10 +3320,10 @@ simu_tbss <- function(nreps, simu_method = c("sparse", "group sparse", "fLS"), n
 #' m <- length(brk); q.t <- 1
 #' sp_density <- rep(0.05, m * q.t)
 #' signals <- c(-0.6, 0.6, -0.6)
-#' try_simu <- simu_tbss(nreps = 3, simu_method = "sparse", nob = nob, 
-#'                       k = p, lags = q.t, brk = brk, sigma = diag(p), 
-#'                       signals = signals, sp_density = sp_density, 
-#'                       sp_pattern = "random", est_method = "sparse", 
+#' try_simu <- simu_tbss(nreps = 3, simu_method = "sparse", nob = nob,
+#'                       k = p, lags = q.t, brk = brk, sigma = diag(p),
+#'                       signals = signals, sp_density = sp_density,
+#'                       sp_pattern = "random", est_method = "sparse",
 #'                       q = q.t, refit = TRUE)
 #' summary(try_simu, critical = 5)
 #' }
@@ -3327,46 +3333,51 @@ summary.VARDetect.simu.result <- function(object, critical = 5, ...){
     reps <- length(object$est_cps)
     n <- object$sizes[1]
     p <- object$sizes[2]
-    
+
     true_lag <- object$lags
     true_cp <- object$true_cp
     true_sparse <- object$true_sparse
     true_lowrank <- object$true_lowrank
     true_phi <- object$true_phi
-    
+
     est_cps <- object$est_cps
     est_sparse <- object$est_sparse_mats
     est_lowrank <- object$est_lowrank_mats
     est_phi <- object$est_phi_mats
-    
+
     times <- object$running_times
-    
+
     # selection rate
     cat("========================== Selection rate: ==========================\n")
     select_rate <- detection_check(est_cps, true_cp, n, critval = critical)
-    cat(paste("Selection rate:", round(select_rate$df_detection, 4), sep = " "))
+    cat("Selection rate: \n")
+    print(select_rate$df_detection)
     cat("\n")
     cat("=====================================================================\n")
-    
+
     # Hausdorff distance
     cat("======================== Hausdorff distance: ========================\n")
     haus_dist <- hausdorff_check(est_cps, true_cp)
-    cat(paste("Hausdorff distance:", round(haus_dist, 4), sep = " "))
+    cat("Hausdorff distance: \n")
+    print(round(haus_dist, 4))
     cat("\n")
     cat("=====================================================================\n")
-    
+
     # statistical measurements
     cat("====================== Statistical Measurment: ======================\n")
     res <- eval_func(true_phi, est_sparse)
-    cat(paste("Performance evaluation:", res$perf_eval, sep = " "))
+    cat("Performance evaluation: \n")
+    print(res$perf_eval)
     cat("\n")
-    cat(paste("Incorrect estimation replication:", res$false_reps, sep = " "))
+    cat("Incorrect estimation replication: \n")
+    print(res$false_reps)
     cat("\n")
     cat("=====================================================================\n")
-    
+
     # computation summary
     cat("======================== Computational Time: ========================\n")
-    cat(paste("Averaged running time:", round(mean(times), 4), "seconds", sep = " "))
-    cat("\n")
+    cat("Averaged running time: \n")
+    cat(round(mean(times), 4))
+    cat(" seconds\n")
     cat("=====================================================================\n")
 }

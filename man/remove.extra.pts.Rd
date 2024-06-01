@@ -12,7 +12,7 @@ remove.extra.pts(pts, brk)
 \item{brk}{the true change points}
 }
 \value{
-a vector of timepoints
+a vector of time points
 }
 \description{
 helper function for detection check

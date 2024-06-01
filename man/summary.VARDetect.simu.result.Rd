@@ -26,10 +26,10 @@ brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
 m <- length(brk); q.t <- 1
 sp_density <- rep(0.05, m * q.t)
 signals <- c(-0.6, 0.6, -0.6)
-try_simu <- simu_tbss(nreps = 3, simu_method = "sparse", nob = nob, 
-                      k = p, lags = q.t, brk = brk, sigma = diag(p), 
-                      signals = signals, sp_density = sp_density, 
-                      sp_pattern = "random", est_method = "sparse", 
+try_simu <- simu_tbss(nreps = 3, simu_method = "sparse", nob = nob,
+                      k = p, lags = q.t, brk = brk, sigma = diag(p),
+                      signals = signals, sp_density = sp_density,
+                      sp_pattern = "random", est_method = "sparse",
                       q = q.t, refit = TRUE)
 summary(try_simu, critical = 5)
 }

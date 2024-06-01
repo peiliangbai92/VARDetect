@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions_BSS_SGL.R
 \name{hausdorff_check}
 \alias{hausdorff_check}
-\title{function for hausdorff distance computation}
+\title{Function for Hausdorff distance computation}
 \usage{
 hausdorff_check(pts.final, brk)
 }
@@ -12,12 +12,12 @@ hausdorff_check(pts.final, brk)
 \item{brk}{the true change points}
 }
 \value{
-hausdorff distance summary results, including mean, standard deviation and median.
+Hausdorff distance summary results, including mean, standard deviation and median.
 }
 \description{
-The function includes two hausdorff distance. 
-The first one is hausdorff_true_est (\eqn{d(A_n, tilde{A}_n^f)}): for each estimated change point, we find the closest true CP and compute the distance, then take the maximum of distances.
-The second one is hausdorff_est_true(\eqn{d(tilde{A}_n^f, A_n)}): for each true change point, find the closest estimated change point and compute the distance, then take the maximum of distances.
+The function includes two Hausdorff distance.
+The first one is hausdorff_true_est (\eqn{d(A_n, \tilde{A}_n^f)}): for each estimated change point, we find the closest true CP and compute the distance, then take the maximum of distances.
+The second one is hausdorff_est_true(\eqn{d(\tilde{A}_n^f, A_n)}): for each true change point, find the closest estimated change point and compute the distance, then take the maximum of distances.
 }
 \examples{
 ## an example of 10 replicates result

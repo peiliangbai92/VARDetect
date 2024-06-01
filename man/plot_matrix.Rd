@@ -7,9 +7,9 @@
 plot_matrix(phi, p)
 }
 \arguments{
-\item{phi}{parameter matrix}
+\item{phi}{combined coefficient matrices for all lags}
 
-\item{p}{number of segements times number of lags}
+\item{p}{number of segments times number of lags}
 }
 \value{
 a plot of AR coefficient matrix
@@ -18,14 +18,15 @@ a plot of AR coefficient matrix
 Plot the AR coefficient matrix
 }
 \examples{
-nob <- (10^3*4); #number of time points
-p <- 15; # number of time series components
-brk <- c(floor(nob/3),floor(2*nob/3),nob+1); # true break points with nob+1 as the last element
-m0 <- length(brk) -1; # number of break points
-q.t <- 2; # the true AR order
-m <- m0+1 #number of segments
+nob <- 4 * 10^3
+p <- 15
+brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+m0 <- length(brk) - 1
+q.t <- 2
+m <- m0 + 1
 sp_density <- rep(0.05, m*q.t) #sparsity level (5\%)
-try<-simu_var("sparse",nob=nob,k=p,lags=q.t,brk =brk,sp_pattern="random",sp_density=sp_density)
-print(plot_matrix(do.call("cbind",try$model_param), m*q.t ))
+try <- simu_var("sparse", nob = nob, k = p, lags = q.t, brk = brk,
+                sp_pattern = "random", sp_density = sp_density)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
 
 }

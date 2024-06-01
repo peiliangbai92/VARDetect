@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions_BSS_SGL.R
 \name{detection_check}
 \alias{detection_check}
-\title{function for detection check}
+\title{Function for detection performance check}
 \usage{
 detection_check(pts.final, brk, nob, critval = 5)
 }
@@ -16,10 +16,10 @@ detection_check(pts.final, brk, nob, critval = 5)
 \item{critval}{critical value for selection rate. Default value is 5. Specifically, to compute the selection rate,  a selected break point is counted as a ``success'' for the \eqn{j}-th true break point, \eqn{t_j}, if it falls in the interval \eqn{[t_j - {(t_{j} - t_{j-1})}/{critval}, t_j + {(t_{j+1} - t_{j})}/{critval}]}, \eqn{j = 1,\dots, m_0}.}
 }
 \value{
-a matrix of detection summary results, including the absolute error, selection rate and relative location. The absolute error of the locations of the estimated break points is defined as \eqn{{error}_j =|tilde{t}_j^f - t_j|}, \eqn{j = 1,\dots, m_0}.
+a matrix of detection summary results, including the absolute error, selection rate and relative location. The absolute error of the locations of the estimated break points is defined as \eqn{{error}_j =|\tilde{t}_j^f - t_j|}, \eqn{j = 1,\dots, m_0}.
 }
 \description{
-function for detection check
+Function for detection performance check
 }
 \examples{
 # an example of 10 replicates result

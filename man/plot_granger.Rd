@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions_BSS_SGL.R
 \name{plot_granger}
 \alias{plot_granger}
-\title{Function to plot Granger causality network}
+\title{Function to plot Granger causality networks}
 \usage{
 plot_granger(est_mats, threshold = 0.1, layout)
 }

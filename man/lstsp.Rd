@@ -10,10 +10,10 @@ lstsp(
   mu.1 = NULL,
   lambda.1.seq = NULL,
   mu.1.seq = NULL,
-  lambda.2,
-  mu.2,
-  lambda.3,
-  mu.3,
+  lambda.2 = NULL,
+  mu.2 = NULL,
+  lambda.3 = NULL,
+  mu.3 = NULL,
   alpha_L = 0.25,
   omega = NULL,
   h = NULL,
@@ -69,7 +69,7 @@ lstsp(
 \item{verbose}{If is TRUE, then it will print all information about current step.}
 }
 \value{
-A list object including 
+A list object including
 \describe{
     \item{data}{the original dataset}
     \item{q}{the time lag for the time series, in this case, it is 1}
@@ -92,18 +92,18 @@ rank <- c(1, 3)
 signals <- c(-0.7, 0.8)
 singular_vals <- c(1, 0.75, 0.5)
 info_ratio <- rep(0.35, 2)
-try <- simu_var(method = "LS", nob = nob, k = p, lags = 1, brk = brk, 
-                sigma = as.matrix(diag(p)), signals = signals, 
-                rank = rank, singular_vals = singular_vals, info_ratio = info_ratio, 
+try <- simu_var(method = "LS", nob = nob, k = p, lags = 1, brk = brk,
+                sigma = as.matrix(diag(p)), signals = signals,
+                rank = rank, singular_vals = singular_vals, info_ratio = info_ratio,
                 sp_pattern = "off-diagonal", spectral_radius = 0.9)
 data <- try$series
 
 lambda1 = lambda2 = lambda3 <- c(2.5, 2.5)
 mu1 = mu2 = mu3 <- c(15, 15)
-fit <- lstsp(data, lambda.1 = lambda1, mu.1 = mu1, 
-             lambda.2 = lambda2, mu.2 = mu2, 
-             lambda.3 = lambda3, mu.3 = mu3, alpha_L = 0.25, 
-             step.size = 5, niter = 20, skip = 5, 
+fit <- lstsp(data, lambda.1 = lambda1, mu.1 = mu1,
+             lambda.2 = lambda2, mu.2 = mu2,
+             lambda.3 = lambda3, mu.3 = mu3, alpha_L = 0.25,
+             step.size = 5, niter = 20, skip = 5,
              cv = FALSE, verbose = FALSE)
 summary(fit)
 plot(fit, data, display = "cp")
