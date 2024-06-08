@@ -1,0 +1,422 @@
+setwd("~/Work/JSS")
+rm(list = ls())
+
+library(VARDetect)
+
+###### Example 1 on Page 20 (Fundamental example for package usage)
+### generate synthetic data set
+nob <- 4000
+p <- 15
+brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+m <- length(brk); q.t <- 1
+sp_density <- rep(0.05, m * q.t)
+signals <- c(-0.6, 0.6, -0.6)
+try <- simu_var(
+    method = "sparse",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    brk = brk,
+    sigma = diag(p),
+    signals = signals,
+    sp_density = sp_density,
+    sp_pattern = "random",
+    seed = 1
+)
+data <- as.matrix(try$series)
+
+### fitting TBSS
+fit <- tbss(data, method = "sparse", q = 1)
+
+### plotting estimated change points
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
+plot(fit, display = "density", threshold = 0.1)
+plot(fit, display = "granger", threshold = 0.2, layout = "nicely")
+
+### print and summary of fitting result
+print(fit)
+summary(fit)
+
+###### Example 2 on Page 23
+try_simu <- simu_tbss(
+    nreps = 5,
+    simu_method = "sparse",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    brk = brk,
+    sigma = diag(p),
+    signals = signals,
+    sp_pattern = "off-diagonal",
+    est_method = "sparse",
+    q = q.t,
+    refit = TRUE
+)
+
+summary(try_simu)
+
+###### Examples in Section 4
+### Example 4.1
+### basic setting
+nob <- 4000; p <- 15
+brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+m <- length(brk); q.t <- 2
+signals <- c(-0.6, -0.4, 0.6, 0.4, -0.6, -0.4)
+
+### random sparse
+sp_density <- rep(0.05, m * q.t)
+try <- simu_var(
+    method = "sparse",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    brk = brk,
+    sigma = diag(p),
+    signals = signals,
+    sp_density = sp_density,
+    sp_pattern = "random",
+    seed = 1
+)
+
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+### 1-off diagonal
+try <- simu_var(
+    method = "sparse",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    brk = brk,
+    sigma = diag(p),
+    signals = signals,
+    sp_pattern = "off-diagonal",
+    seed = 1
+)
+
+data <- as.matrix(try$series)
+MTS::MTSplot(data)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+# fitting TBSS
+fit <- tbss(data, method = "sparse", q = q.t)
+print(fit)
+
+# plotting model parameters
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
+
+### sparse VAR with different lags
+nob <- 1000; p <- 15
+brk <- c(floor(nob / 2), nob + 1)
+m <- length(brk); q.t <- 2
+signals <- c(-0.8, 0.8, 0.25)
+try <- simu_var(
+    method = "sparse",
+    nob = nob,
+    k = p,
+    brk = brk,
+    signals = signals,
+    lags_vector = c(1, 2),
+    sp_pattern = "off-diagonal",
+    seed = 42
+)
+data <- as.matrix(try$series)
+MTS::MTSplot(data)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+# BIC based lag selection function
+lag <- lag_selection(
+    data = data,
+    method = "sparse",
+    lag_candidates = c(1, 2, 3, 4)
+)
+print(lag)
+
+# fitting with selected lag
+fit <- tbss(data, method = "sparse", q = lag, refit = TRUE)
+print(fit)
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
+
+### Example 4.2
+### basic setting
+nob <- 4000; p <- 20
+brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+m <- length(brk); q.t <- 2
+
+### column-wise group sparse
+signals <- c(-0.8, -0.4, 0.6, -0.4, -0.8, -0.4)
+num_group <- 3
+group_index <- vector('list', num_group)
+group_index[[1]] <- c(1, 5)
+group_index[[2]] <- c(31)
+try <- simu_var(
+    method = "group sparse",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    brk = brk,
+    sigma = diag(p),
+    signals = signals,
+    group_index = group_index,
+    group_type = "columnwise",
+    seed = 1
+)
+data <- as.matrix(try$series)
+MTS::MTSplot(data)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+# fitting TBSS
+fit <- tbss(data, method = "group sparse", q = q.t, group.case = "columnwise",
+            group.index = as.list(c(0:(p * q.t - 1))))
+print(fit)
+
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
+
+### row-wise group sparse
+signals <- c(-0.8, 0.4, 0.6, -0.3, -0.8, 0.4)
+num_group <- q.t + 1
+group_index <- vector('list', num_group)
+group_index[[1]] <- c(1, 3)
+group_index[[2]] <- c(1, 3) + p
+try <- simu_var(
+    method = "group sparse",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    sigma = diag(p),
+    brk = brk,
+    signals = signals,
+    group_index = group_index,
+    group_type = "rowwise",
+    seed = 1
+)
+data <- as.matrix(try$series)
+MTS::MTSplot(data)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+# fitting TBSS
+group.index <- vector('list', p)
+for(i in 1:p){
+    group.index[[i]] <- rep(i - 1, q.t) + seq(0, p * (q.t - 1), p)
+}
+fit <- tbss(data, method = "group sparse", q = q.t,
+            group.case = "rowwise", group.index = group.index)
+print(fit)
+
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
+
+### Hierarchical lag group sparse
+signals <- c(-0.4, -0.35, 0.8, -0.35, -0.6, -0.35)
+num_group <- q.t + 1
+group_index <- vector('list', num_group)
+group_index[[1]] <- c(1, 3, 8)
+group_index[[2]] <- c(3 + p)
+try <- simu_var(
+    method = "group sparse",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    sigma = diag(p),
+    brk = brk,
+    signals = signals,
+    group_index = group_index,
+    group_type = "rowwise",
+    seed = 1
+)
+data <- as.matrix(try$series)
+MTS::MTSplot(data)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+# fitting TBSS
+group.index <- vector('list', p * q.t)
+for(i in 1:p){
+    for(j in 1:q.t){
+        if(j == 1){
+            group.index[[(j - 1) * p + i]] <- c((q.t - 1) * p + i) - 1
+        }else{
+            group.index[[(j - 1) * p + i]] <- rep(i - 1, q.t) + seq(0, p * (q.t - 1), p)
+        }
+    }
+}
+fit <- tbss(data, method = "group sparse", q = q.t,
+            group.case = "rowwise", group.index = group.index)
+print(fit)
+
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
+
+### Example 4.3
+### basic setting
+nob <- 300; p <- 15
+brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+m <- length(brk); q.t <- 1
+rank <- rep(2, m)
+signals <- c(-0.7, 0.85, -0.7)
+singular_vals <- c(1, 0.75); info_ratio <- rep(0.35, 3)
+
+try <- simu_var(
+    method = "fLS",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    brk = brk,
+    sigma = diag(p),
+    signals = signals,
+    rank = rank,
+    singular_vals = singular_vals,
+    info_ratio = info_ratio,
+    sp_pattern = "off-diagonal",
+    spectral_radius = 0.9,
+    seed = 9256
+)
+
+data <- as.matrix(try$series)
+MTS::MTSplot(data)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+# fitting TBSS
+fit <- tbss(data, method = "fLS", mu = 175)
+print(fit)
+
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
+
+### Example 4.4
+### basic setting
+nob <- 300; p <- 20;
+brk <- c(floor(nob / 3), floor(2 * nob / 3), nob + 1)
+m <- length(brk); q.t <- 1
+rank <- c(1, 3, 1)
+signals <- c(-0.7, 0.8, -0.7)
+singular_vals <- c(1, 0.75, 0.5)
+info_ratio <- rep(0.35, 3)
+
+try <- simu_var(
+    method = "LS",
+    nob = nob,
+    k = p,
+    lags = q.t,
+    brk = brk,
+    sigma = diag(p),
+    signals = signals,
+    rank = rank,
+    singular_vals = singular_vals,
+    info_ratio = info_ratio,
+    sp_pattern = "off-diagonal",
+    spectral_radius = 0.9,
+    seed = 9256
+)
+
+data <- as.matrix(try$series)
+MTS::MTSplot(data)
+print(plot_matrix(do.call("cbind", try$model_param), m * q.t))
+
+# fitting TBSS
+lambda1 = lambda2 = lambda3 <- c(2.5, 2.5)
+mu1 = mu2 = mu3 <- c(15, 15)
+fit <- lstsp(
+    data = data,
+    lambda.1 = lambda1,
+    mu.1 = mu1,
+    lambda.2 = lambda2,
+    mu.2 = mu2,
+    lambda.3 = lambda3,
+    mu.3 = mu3,
+    step.size = 5, niter = 20, skip = 5
+)
+print(fit)
+
+plot(fit, data, display = "cp")
+plot(fit, data, display = "param")
+
+### Example 4.5
+### Application to stocks return data
+data(weekly)
+set.seed(100)
+
+### sparse setting
+lambda.1.max <- 1e-2; nlam <- 20
+lambda.1.min <- lambda.1.max * 1e-3
+delta.lam <- (log(lambda.1.max) - log(lambda.1.min)) / (nlam - 1)
+lambda.1.cv <- sapply(1:nlam, function(j) lambda.1.min * exp(delta.lam * (nlam - j)))
+fit <- tbss(weekly, method = "sparse", lambda.1.cv = lambda.1.cv,
+            lambda.2.cv = 0.05, block.size = 8, an.grid = c(10, 15, 18))
+
+print(fit)
+plot(fit, weekly, display = "cp")
+
+### group sparse setting
+lambda.1.max <- 1e-2; nlam <- 20
+lambda.1.min <- lambda.1.max * 1e-4
+delta.lam <- (log(lambda.1.max) - log(lambda.1.min)) / (nlam - 1)
+lambda.1.cv <- sapply(1:nlam, function(j) lambda.1.min * exp(delta.lam * (nlam - j)))
+fit_group <- tbss(weekly, method = "group sparse", group.case = "columnwise",
+            max.iteration = 50, lambda.1.cv = lambda.1.cv,
+            lambda.2.cv = 0.1, block.size = 8, an.grid = c(10, 15, 18))
+
+print(fit_group)
+plot(fit_group, weekly, display = "cp")
+
+### Granger causality graph
+plot(fit, display = "granger", threshold = 0.2)
+plot(fit_group, display = "granger", threshold = 0.2)
+
+### density plots
+plot(fit, display = "density", threshold = 0.2)
+plot(fit_group, display = "density", threshold = 0.2)
+
+### L+S setting
+n <- dim(weekly)[1]
+k <- dim(weekly)[2]
+lambda.1 <- c(0.015, 0.015); mu.1 <- c(0.05, 0.05)
+lambda.2 <- c(0.01, 0.01); mu.2 <- c(0.05, 0.05)
+lambda.3 <- c(0.008, 0.008); mu.3 <- c(0.0335, 0.0335)
+omega <- 0.0015 * log(n-1) * log(k)
+fit_LpS <- lstsp(weekly,
+                 lambda.1 = lambda.1,
+                 mu.1 = mu.1,
+                 lambda.2 = lambda.2,
+                 mu.2 = mu.2,
+                 lambda.3 = lambda.3,
+                 mu.3 = mu.3,
+                 h = 80, step.size = 40, omega = omega,
+                 niter = 20, skip = 5)
+
+print(fit_LpS)
+plot(fit_LpS, weekly, display = "cp")
+plot(fit_LpS, weekly, display = "param")
+plot(fit_LpS, display = "density", threshold = 0.05)
+
+### compare SBS
+library(hdbinseg)
+fit <- sbs.alg(t(weekly), cp.type = 2)
+print(fit$ecp)
+MTS::MTSplot(weekly)
+abline(v = fit$ecp, col = 'red', lwd = 2)
+
+
+### Example 4.6
+### Application to EEG data
+library(VARDetect)
+data(eeg)
+n <- dim(eeg)[1] - 1
+p <- dim(eeg)[2]
+
+lag <- lag_selection(as.matrix(eeg), method = "sparse", lag_candidates = c(1, 2, 3, 4, 5))
+
+lag <- 1
+lambda.1.cv <- c(0.1)
+lambda.2.cv <- c(0.001)
+fit <- tbss(as.matrix(eeg), method = "sparse", q = lag,
+            lambda.1.cv = lambda.1.cv,
+            lambda.2.cv = lambda.2.cv,
+            block.size = floor(0.8 * sqrt(n)),
+            an.grid = c(150, 300), refit = TRUE)
+
+print(fit)
+plot(fit, eeg, display = "cp")
+plot(fit, display = "granger", threshold = 0.1)

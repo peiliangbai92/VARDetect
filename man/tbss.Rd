@@ -38,9 +38,9 @@ tbss(
 
 \item{mu}{tuning parameter for low rank component, only available when method is set to "fLS"}
 
-\item{q}{the AR order}
+\item{q}{the VAR lag}
 
-\item{max.iteration}{max number of iteration for the fused lasso}
+\item{max.iteration}{max number of iteration for the Fused lasso}
 
 \item{tol}{tolerance for the fused lasso}
 
@@ -54,7 +54,7 @@ tbss(
 
 \item{an.grid}{a vector of an for grid searching}
 
-\item{verbose}{a boolean argument to determine whether provide detailed outputs for each step. Default is FALSE}
+\item{verbose}{a Boolean argument to determine whether provide detailed outputs for each step. Default is FALSE}
 }
 \value{
 S3 object of class \code{VARDetect.result}, which contains the followings

@@ -723,15 +723,15 @@ simu_var <- function(method = c("sparse", "group sparse", "fLS", "LS"), nob = 30
 #' @param lambda.1.cv tuning parameter lambda_1 for fused lasso
 #' @param lambda.2.cv tuning parameter lambda_2 for fused lasso
 #' @param mu tuning parameter for low rank component, only available when method is set to "fLS"
-#' @param q the AR order
-#' @param max.iteration max number of iteration for the fused lasso
+#' @param q the VAR lag
+#' @param max.iteration max number of iteration for the Fused lasso
 #' @param tol tolerance for the fused lasso
 #' @param block.size the block size
 #' @param blocks the blocks
 #' @param refit logical; if TRUE, refit the VAR model for parameter estimation. Default is FALSE.
 #' @param use.BIC use BIC for k-means part
 #' @param an.grid a vector of an for grid searching
-#' @param verbose a boolean argument to determine whether provide detailed outputs for each step. Default is FALSE
+#' @param verbose a Boolean argument to determine whether provide detailed outputs for each step. Default is FALSE
 #' @return S3 object of class \code{VARDetect.result}, which contains the followings
 #' \describe{
 #'   \item{data}{the original dataset}
@@ -1095,7 +1095,9 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                 an.sel <- an.grid[an.idx.final]
             }
             if(refit){
-                cat("Refit for the parameter estimation")
+                if(verbose){
+                    cat("Refit for the parameter estimation")
+                }
                 temp <- final.phi.hat.list.res[[an.idx.final]]
                 cp.final <- final.pts.res[[an.idx.final]]
                 cp.full <- c(1, cp.final, nob + 1)
@@ -1121,7 +1123,9 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                                                time = time.comparison), class = "VARDetect.result")
                 return(final.result)
             }else{
-                cat("No refit for the parameter estimation")
+                if(verbose){
+                    cat("No refit for the parameter estimation")
+                }
                 final.result <- structure(list(data = data,
                                                q = q,
                                                cp = final.pts.res[[an.idx.final]],
@@ -1306,7 +1310,9 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
             }
             if(method == "sparse"){
                 if(refit){
-                    cat("Refit for the parameter estimation")
+                    if(verbose){
+                        cat("Refit for the parameter estimation")
+                    }
                     temp <- final.phi.hat.list.res[[an.idx.final]]
                     cp.final <- final.pts.res[[an.idx.final]]
                     cp.full <- c(1, cp.final, nob + 1)
@@ -1333,7 +1339,9 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                                               class = "VARDetect.result")
                     return(final.result)
                 }else{
-                    cat("No refit for the parameter estimation")
+                    if(verbose){
+                        cat("No refit for the parameter estimation")
+                    }
                     final.result <- structure(list(data = data,
                                                    q = q,
                                                    cp = final.pts.res[[an.idx.final]],
@@ -1346,7 +1354,9 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                 }
             }else if(method == "fLS"){
                 if(refit){
-                    cat("Refit for the parameter estimation")
+                    if(verbose){
+                        cat("Refit for the parameter estimation")
+                    }
                     temp <- final.phi.hat.list.res[[an.idx.final]]
                     cp.final <- final.pts.res[[an.idx.final]]
                     cp.full <- c(1, cp.final, nob + 1)
@@ -1375,11 +1385,13 @@ tbss <- function(data, method = c("sparse", "group sparse", "fLS"),
                                               class = "VARDetect.result")
                     return(final.result)
                 }else{
+                    if(verbose){
+                        cat("No refit for the parameter estimation")
+                    }
                     est_phi <- vector('list', length(final.pts.res[[an.idx.final]]) + 1)
                     for(j in 1:length(est_phi)){
                         est_phi[[j]] <- L_est + final.phi.hat.list.res[[an.idx.final]][[j]]
                     }
-                    cat("No refit for the parameter estimation")
                     final.result <- structure(list(data = data,
                                                    q = q,
                                                    cp = final.pts.res[[an.idx.final]],
@@ -1568,7 +1580,7 @@ first.step.blocks <- function(data.temp, lambda.1.cv, lambda.2.cv, q, max.iterat
         }
     }
 
-    # select the tuning parmaete that has the small cross-validation value
+    # select the tuning parameters that has the small cross-validation value
     lll <- min(which(cv == min(cv, na.rm = TRUE)))
     phi.hat.full <- phi.final[[lll]]
 
@@ -2253,6 +2265,7 @@ third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = to
 #' @param data input data matrix, each column represents the time series component
 #' @param method method is sparse
 #' @param lag_candidates potential lag selection set
+#' @param verbose A boolean argument, if TRUE, it provides detailed information. Default is FALSE
 #' @return selected lag for VAR series
 #' \describe{
 #'     \item{select_lag}{An integer no less than 1 represents the selected lag of time series.}
@@ -2278,14 +2291,17 @@ third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = to
 #' print(select_lag)
 #' }
 #' @export
-lag_selection <- function(data, method = c("sparse", "group sparse", "fLS"), lag_candidates){
+lag_selection <- function(data,
+                          method = c("sparse", "group sparse", "fLS"),
+                          lag_candidates,
+                          verbose = FALSE){
     nob <- length(data[,1])
     p <- length(data[1,])
 
     BIC_full <- rep(0, length(lag_candidates))
     for(i in 1:length(lag_candidates)){
         d <- lag_candidates[i]
-        fit <- tbss(data = data, method = method, q = d, refit = TRUE)
+        fit <- tbss(data = data, method = method, q = d, refit = TRUE, verbose = verbose)
         sparse_mats <- fit$sparse_mats
         cp_est <- fit$cp
         cp_full <- c(1, cp_est, nob + 1)

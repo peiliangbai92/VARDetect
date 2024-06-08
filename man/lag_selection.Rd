@@ -7,7 +7,8 @@
 lag_selection(
   data,
   method = c("sparse", "group sparse", "fLS"),
-  lag_candidates
+  lag_candidates,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ lag_selection(
 \item{method}{method is sparse}
 
 \item{lag_candidates}{potential lag selection set}
+
+\item{verbose}{A boolean argument, if TRUE, it provides detailed information. Default is FALSE}
 }
 \value{
 selected lag for VAR series
