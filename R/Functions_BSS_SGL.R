@@ -2956,7 +2956,7 @@ eval_func <- function(true_mats, est_mats){
 
 
 #' Function to plot Granger causality networks
-#' @description A function to plot Granger causal network for each segment via estimated sparse component
+#' @description A function to plot Granger causal network for each segment via estimated sparse component. Note that if it has multiple lags, it only provides the first order Granger causality plot.
 #' @param est_mats A list of numeric sparse matrices, indicating the estimated sparse components for each segment
 #' @param threshold A numeric positive value, used to determine the threshold to present the edges
 #' @param layout A character string, indicates the layout for the igraph plot argument
@@ -2982,7 +2982,7 @@ plot_granger <- function(est_mats, threshold = 0.1, layout){
     seg_length <- length(est_mats)
     for(i in 1:seg_length){
         est_mat <- est_mats[[i]]
-        k <- ncol(est_mat)
+        k <- nrow(est_mat)
         adj_mat <- matrix(0, k, k)
         for(r in 1:k){
             for(c in 1:k){
@@ -2991,7 +2991,7 @@ plot_granger <- function(est_mats, threshold = 0.1, layout){
                 }
             }
         }
-        varnames <- colnames(est_mat)
+        varnames <- rownames(est_mat)
         colnames(adj_mat) = rownames(adj_mat) <- varnames
         net <- graph.adjacency(adj_mat, "directed", diag = FALSE)
         if(layout == "circle"){
