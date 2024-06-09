@@ -2263,9 +2263,19 @@ third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = to
 #' @description Select the lag of the VAR model (if the lag is unknown) using BIC method for total segments
 #'
 #' @param data input data matrix, each column represents the time series component
-#' @param method method is sparse
+#' @param method method is sparse, group sparse and fixed lowrank plus sparse
+#' @param group.case two different types of group sparse, column-wise and row-wise, respectively.
+#' @param group.index specify group sparse index. Default is NULL.
+#' @param lambda.1.cv tuning parameter lambda_1 for fused lasso
+#' @param lambda.2.cv tuning parameter lambda_2 for fused lasso
+#' @param mu tuning parameter for low rank component, only available when method is set to "fLS".
+#' @param block.size the block size
+#' @param blocks the blocks
+#' @param use.BIC use BIC for k-means part
+#' @param an.grid a vector of an for grid searching.
+#' @param threshold a numeric argument, give the threshold for estimated model parameter matrices. Default is NULL.
 #' @param lag_candidates potential lag selection set
-#' @param verbose A boolean argument, if TRUE, it provides detailed information. Default is FALSE
+#' @param verbose A Boolean argument, if TRUE, it provides detailed information. Default is FALSE
 #' @return selected lag for VAR series
 #' \describe{
 #'     \item{select_lag}{An integer no less than 1 represents the selected lag of time series.}
@@ -2291,17 +2301,34 @@ third.step.exhaustive.search <- function(data, q, max.iteration = 1000, tol = to
 #' print(select_lag)
 #' }
 #' @export
-lag_selection <- function(data,
-                          method = c("sparse", "group sparse", "fLS"),
-                          lag_candidates,
-                          verbose = FALSE){
+lag_selection <- function(data, method = c("sparse", "group sparse", "fLS"),
+                          group.case = c("columnwise", "rowwise"), group.index = NULL,
+                          lambda.1.cv = NULL, lambda.2.cv = NULL, mu = NULL,
+                          block.size = NULL, blocks = NULL,
+                          use.BIC = TRUE, an.grid = NULL, threshold = NULL,
+                          lag_candidates, verbose = FALSE){
     nob <- length(data[,1])
     p <- length(data[1,])
 
     BIC_full <- rep(0, length(lag_candidates))
     for(i in 1:length(lag_candidates)){
         d <- lag_candidates[i]
-        fit <- tbss(data = data, method = method, q = d, refit = TRUE, verbose = verbose)
+        fit <- tbss(
+            data = data,
+            method = method,
+            group.case = group.case,
+            group.index = group.index,
+            lambda.1.cv = lambda.1.cv,
+            lambda.2.cv = lambda.2.cv,
+            mu = mu,
+            q = d,
+            block.size = block.size,
+            blocks = blocks,
+            use.BIC = use.BIC,
+            an.grid = an.grid,
+            refit = TRUE,
+            verbose = verbose
+        )
         sparse_mats <- fit$sparse_mats
         cp_est <- fit$cp
         cp_full <- c(1, cp_est, nob + 1)
@@ -2311,10 +2338,13 @@ lag_selection <- function(data,
             n_temp <- dim(data_temp)[1]
             sparse_mat_temp <- sparse_mats[[j]]
             residual <- c()
-            for(t in ((d+1):n_temp)){
+            for(t in ((d + 1):n_temp)){
                 y_pred <- 0
                 for(dd in 1:d){
                     phi <- sparse_mat_temp[, ((dd - 1) * p + 1):(dd * p)]
+                    if(length(threshold)){
+                        phi[abs(phi) <= threshold] <- 0
+                    }
                     y_pred <- y_pred + phi %*% (data_temp[t - dd, ])
                 }
                 residual <- cbind(residual, data_temp[t, ] - y_pred)
